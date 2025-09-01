@@ -1,21 +1,22 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import ContextAlert from '../components/ContextAlert.astro';
-import Markdown from '../components/Markdown.astro';
-
-const explainer = `
-An Astro website can go way beyond static pages - on the right platform.
-
-Netlify supports not only [Streaming SSR](https://docs.astro.build/en/guides/server-side-rendering/#html-streaming) and fast [Edge Middleware](https://docs.astro.build/en/guides/middleware/), but also [on-demand revalidation](https://www.netlify.com/blog/cache-tags-and-purge-api-on-netlify/) and [stale-while-revalidate](https://www.netlify.com/blog/swr-and-fine-grained-cache-control/). 
-Any page or data can be rebuilt only when needed, without site visitors ever getting a performance hit.
-`;
 ---
 
-<Layout title="Welcome to Astro.">
-    <ContextAlert class="mb-8" />
-    <h1 class="mb-10">Netlify Platform Starter for Astro</h1>
-    <Markdown content={explainer} class="mb-10 text-lg" />
+<Layout title="InsightStream - Real-Time Ecommerce Analytics">
+    <h1 class="mb-6">Real-Time Ecommerce Analytics. Zero Engineering.</h1>
+    
+    <p class="mb-10 text-lg">
+        Go from data chaos to actionable insights in minutes, not months. Get a complete view of your revenue, conversions, and customer behavior without writing a single line of backend code.
+    </p>
+
+    <h2 class="mb-4">Why InsightStream?</h2>
+    <ul class="mb-10 list-disc list-inside text-lg">
+        <li class="mb-2"><strong>Live Revenue Dashboard:</strong> See every sale, refund, and promotion impact as it happens.</li>
+        <li class="mb-2"><strong>Customer Journey Mapping:</strong> Understand exactly how users find you and what makes them buy.</li>
+        <li class="mb-2"><strong>Install & Forget:</strong> One snippet of code. We handle the rest—infrastructure, security, and maintenance.</li>
+    </ul>
+
     <p>
-        <a href="https://docs.netlify.com/frameworks/astro/" class="btn btn-lg sm:min-w-64">Read the Docs</a>
+        <a href="mailto:nnamdiodera@gmail.com?subject=InsightStream Demo Request" class="btn btn-lg sm:min-w-64">Request a Free Demo</a>
     </p>
 </Layout>
