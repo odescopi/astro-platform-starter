@@ -18,7 +18,7 @@ function initAnalytics() {
   
   // Load AWS SDK dynamically
   const script = document.createElement('script');
-  script.src = 'https://sdk.amazonaws.com/js/aws-sdk-2.0.0.min.js';
+  script.src = 'https://sdk.amazonaws.com/js/aws-sdk-2.1326.0.min.js';
   script.onload = () => {
     window.AWS.config.region = AWS_CONFIG.region;
     window.AWS.config.credentials = new window.AWS.CognitoIdentityCredentials({
