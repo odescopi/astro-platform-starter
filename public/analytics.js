@@ -1,7 +1,7 @@
 // AWS Configuration - Replace with your actual Identity Pool ID from CDK outputs
 const AWS_CONFIG = {
   region: 'us-east-1',
-  IdentityPoolId: 'us-east-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' // ← REPLACE THIS
+  IdentityPoolId: 'us-east-1:f73b9c93-1212-4ee6-b6ed-ad3ad4fae856' // ← REPLACE THIS
 };
 
 // Generate unique ID
