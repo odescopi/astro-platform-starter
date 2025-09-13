@@ -7,7 +7,6 @@ import Footer from '../components/Footer.astro';
 // ADD THIS IMPORT
 import Analytics from '../components/Analytics.astro';
 
-
 interface Props {
     title: string;
 }
@@ -33,5 +32,8 @@ const { title } = Astro.props;
                 <!-- <Footer /> -->
             </div>
         </div>
+        
+        <!-- ADD THIS LINE TO USE THE ANALYTICS COMPONENT -->
+        <Analytics />
     </body>
 </html>
