@@ -57,7 +57,7 @@ function trackEvent(eventType, eventData = {}) {
   const params = {
     Data: JSON.stringify(event),
     PartitionKey: event.event_id,
-    StreamName: 'website-click-stream'
+    StreamName: 'CdkIacProjectStack-WebsiteClickStream66FE1323-blFyTYg1yVJv'
   };
 
   kinesis.putRecord(params, (err, data) => {
