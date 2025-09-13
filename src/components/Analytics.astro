@@ -1,0 +1,120 @@
+---
+// This component handles all analytics tracking
+import { randomBytes } from 'crypto';
+
+// Generate unique ID
+const generateUniqueId = () => {
+  return `${Date.now()}_${randomBytes(4).toString('hex')}`;
+};
+---
+
+<script>
+// AWS Configuration - Replace with your actual Identity Pool ID
+const AWS_CONFIG = {
+  region: 'us-east-1',
+  IdentityPoolId: 'us-east-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+};
+
+// Initialize AWS when component loads
+if (typeof window !== 'undefined') {
+  import('https://sdk.amazonaws.com/js/aws-sdk-2.0.0.min.js').then(() => {
+    window.AWS.config.region = AWS_CONFIG.region;
+    window.AWS.config.credentials = new window.AWS.CognitoIdentityCredentials({
+      IdentityPoolId: AWS_CONFIG.IdentityPoolId
+    });
+
+    const kinesis = new window.AWS.Kinesis();
+    const STREAM_NAME = 'website-click-stream';
+
+    // Function to send events to Kinesis
+    window.trackEvent = function(eventType, eventData = {}) {
+      const event = {
+        event_id: generateUniqueId(),
+        event_type: eventType,
+        timestamp: new Date().toISOString(),
+        page_url: window.location.href,
+        page_title: document.title,
+        page_path: window.location.pathname,
+        referrer: document.referrer,
+        user_agent: navigator.userAgent,
+        screen_resolution: `${screen.width}x${screen.height}`,
+        ...eventData
+      };
+
+      const params = {
+        Data: JSON.stringify(event),
+        PartitionKey: event.event_id,
+        StreamName: STREAM_NAME
+      };
+
+      kinesis.putRecord(params, (err, data) => {
+        if (err) {
+          console.error('Error sending event:', err);
+        } else {
+          console.log('Event sent successfully:', eventType);
+        }
+      });
+    };
+
+    // Track initial page view
+    setTimeout(() => {
+      window.trackEvent('page_view');
+    }, 1000);
+
+    // Track CTA clicks
+    document.addEventListener('DOMContentLoaded', function() {
+      // Track "Request Demo" button clicks
+      const demoButtons = document.querySelectorAll('a[href*="demo@getinsightstream.com"]');
+      demoButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          window.trackEvent('cta_click', {
+            cta_type: 'request_demo',
+            cta_text: btn.textContent.trim(),
+            cta_position: 'hero'
+          });
+        });
+      });
+
+      // Track navigation clicks
+      const navLinks = document.querySelectorAll('nav a, header a');
+      navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+          window.trackEvent('navigation_click', {
+            link_text: link.textContent.trim(),
+            link_url: link.href,
+            link_location: 'navigation'
+          });
+        });
+      });
+    });
+
+    // Track scroll depth
+    let maxScrollDepth = 0;
+    window.addEventListener('scroll', () => {
+      const scrollHeight = document.documentElement.scrollHeight;
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const clientHeight = document.documentElement.clientHeight;
+      const currentDepth = Math.round((scrollTop + clientHeight) / scrollHeight * 100);
+      
+      if (currentDepth > maxScrollDepth && currentDepth % 25 === 0) {
+        maxScrollDepth = currentDepth;
+        window.trackEvent('scroll_depth', {
+          depth_percentage: currentDepth,
+          page_url: window.location.href
+        });
+      }
+    });
+
+    // Track time on page
+    let pageLoadTime = Date.now();
+    window.addEventListener('beforeunload', () => {
+      const timeOnPage = Date.now() - pageLoadTime;
+      window.trackEvent('page_exit', {
+        time_on_page: timeOnPage,
+        scroll_depth: maxScrollDepth,
+        page_url: window.location.href
+      });
+    });
+  });
+}
+</script>
