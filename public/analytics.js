@@ -9,6 +9,15 @@ const generateUniqueId = () => {
   return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
+// NEW: Shop domain detection function
+function getShopDomain() {
+    // Try multiple sources for shop domain
+    return window.shopDomain || 
+           document.querySelector('[data-shop-domain]')?.dataset.shopDomain ||
+           new URLSearchParams(window.location.search).get('shop') ||
+           window.location.hostname.replace('www.', '');
+}
+
 // Initialize AWS
 let kinesis = null;
 let isInitialized = false;
@@ -77,7 +86,8 @@ function trackEcommerceEvents() {
           product_id: productId,
           category: element.dataset.category || 'general',
           price: parseFloat(element.dataset.price) || 0,
-          stock_status: element.dataset.stockStatus || 'in_stock'
+          stock_status: element.dataset.stockStatus || 'in_stock',
+          shop_domain: getShopDomain() // Added shop domain
         });
       });
     });
@@ -97,7 +107,8 @@ function trackEcommerceEvents() {
           product_id: productId,
           quantity: parseInt(button.dataset.quantity) || 1,
           price: parseFloat(button.dataset.price) || 0,
-          discount_code: getCurrentDiscountCode()
+          discount_code: getCurrentDiscountCode(),
+          shop_domain: getShopDomain() // Added shop domain
         });
         
         // Allow original cart functionality after tracking
@@ -120,7 +131,8 @@ function trackEcommerceEvents() {
         trackEvent('checkout_start', {
           step_number: 1,
           payment_method: getPaymentMethod(),
-          shipping_method: document.querySelector('[name="shipping"]')?.value || 'standard'
+          shipping_method: document.querySelector('[name="shipping"]')?.value || 'standard',
+          shop_domain: getShopDomain() // Added shop domain
         });
       });
     });
@@ -135,7 +147,8 @@ function trackEcommerceEvents() {
         revenue: getOrderTotal(),
         item_count: getItemCount(),
         payment_method: getPaymentMethod(),
-        shipping_method: 'standard' // Could be extracted from page
+        shipping_method: 'standard',
+        shop_domain: getShopDomain() // Added shop domain
       });
     }
   }
@@ -148,7 +161,8 @@ function trackEcommerceEvents() {
         trackEvent('user_engagement', {
           engagement_type: 'video_play',
           media_id: video.id || 'product_video',
-          duration: video.duration || 0
+          duration: video.duration || 0,
+          shop_domain: getShopDomain() // Added shop domain
         });
       });
     });
@@ -164,7 +178,8 @@ function trackEcommerceEvents() {
           trackEvent('user_engagement', {
             engagement_type: 'file_download',
             file_type: extension,
-            file_name: link.download || link.href.split('/').pop()
+            file_name: link.download || link.href.split('/').pop(),
+            shop_domain: getShopDomain() // Added shop domain
           });
         }
       }
@@ -237,14 +252,14 @@ function trackEvent(eventType, eventData = {}) {
     referrer: document.referrer,
     user_agent: navigator.userAgent,
     screen_resolution: `${screen.width}x${screen.height}`,
-    shop_domain: window.location.hostname, // Auto-populate shop domain
+    shop_domain: getShopDomain(), // UPDATED: Use the new function
     ...eventData
   };
 
   const params = {
     Data: JSON.stringify(event),
     PartitionKey: event.event_id,
-    StreamName: 'website-click-stream' // Using fixed stream name
+    StreamName: 'CdkIacProjectStack-WebsiteClickStream66FE1323-blFyTYg1yVJv' // UPDATED: Fixed stream name
   };
 
   kinesis.putRecord(params, (err, data) => {
@@ -305,7 +320,8 @@ document.addEventListener('click', (e) => {
       trackEvent('navigation_click', {
         link_text: link.textContent.trim().substring(0, 100),
         link_url: link.href,
-        link_location: 'navigation'
+        link_location: 'navigation',
+        shop_domain: getShopDomain() // Added shop domain
       });
     }, 100);
   }
@@ -323,7 +339,8 @@ window.addEventListener('scroll', () => {
     maxScrollDepth = currentDepth;
     trackEvent('scroll_depth', {
       depth_percentage: currentDepth,
-      page_url: window.location.href
+      page_url: window.location.href,
+      shop_domain: getShopDomain() // Added shop domain
     });
   }
 });
@@ -335,6 +352,7 @@ window.addEventListener('beforeunload', () => {
   trackEvent('page_exit', {
     time_on_page: timeOnPage,
     scroll_depth: maxScrollDepth,
-    page_url: window.location.href
+    page_url: window.location.href,
+    shop_domain: getShopDomain() // Added shop domain
   });
 });
