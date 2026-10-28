@@ -3,23 +3,22 @@ import Logo from '../components/Logo.astro';
 
 const navItems = [
     { linkText: 'Home', href: '/' },
-    { linkText: 'Revalidation', href: '/revalidation' },
-    { linkText: 'Image CDN', href: '/image-cdn' },
-    { linkText: 'Edge Function', href: '/edge' },
-    { linkText: 'Blobs', href: '/blobs' }
+    { linkText: 'Dashboard', href: '/dashboard' },
+    { linkText: 'SQL Explorer', href: '/explorer' }
 ];
 ---
 
-<nav class="flex flex-wrap items-center gap-4 pt-6 pb-16 sm:pt-12 sm:pb-24">
-    <a href="/">
+<nav class="flex flex-wrap items-center justify-between gap-4 pt-6 pb-8 sm:pt-12 sm:pb-12 border-b border-gray-800 mb-12">
+    <a href="/" class="flex items-center">
         <Logo />
+        <span class="ml-2 font-bold text-xl tracking-tight">GetInsightStream</span>
     </a>
     {
         !!navItems?.length && (
-            <ul class="flex flex-wrap gap-x-4 gap-y-1">
+            <ul class="flex flex-wrap items-center gap-x-2 gap-y-1">
                 {navItems.map((item) => (
                     <li>
-                        <a href={item.href} class="inline-block px-1.5 py-1 sm:px-3 sm:py-2">
+                        <a href={item.href} class="inline-block px-3 py-2 text-gray-300 hover:text-white transition-colors">
                             {item.linkText}
                         </a>
                     </li>
