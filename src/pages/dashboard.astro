@@ -13,12 +13,19 @@
     .subtitle { color: #a0aec0; margin-bottom: 30px; font-size: 16px; }
     input { padding: 12px; width: 100%; box-sizing: border-box; border-radius: 4px; border: 1px solid #4a5568; margin-bottom: 20px; font-size: 16px; background: #1a202c; color: white; }
     input:focus { outline: none; border-color: #ff6b6b; }
-    button { padding: 12px 24px; background: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; transition: background 0.2s; }
-    button:hover { background: #ff5252; }
-    button:disabled { background: #4a5568; cursor: not-allowed; }
+    
+    .main-btn { padding: 12px 24px; background: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; transition: background 0.2s; }
+    .main-btn:hover { background: #ff5252; }
+    .main-btn:disabled { background: #4a5568; cursor: not-allowed; }
+    
     #result { margin-top: 30px; padding: 20px; background: #1a202c; border-radius: 8px; display: none; text-align: left; }
     #error-box { margin-top: 20px; padding: 15px; background: #9b2c2c; color: white; border-radius: 4px; display: none; text-align: left; font-size: 14px; word-break: break-all; }
-    .key-box { background: #2d3748; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 18px; margin-top: 10px; word-break: break-all; color: #68d391; }
+    
+    .key-container { display: flex; gap: 10px; margin-top: 10px; }
+    .key-box { background: #2d3748; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 16px; flex-grow: 1; word-break: break-all; color: #68d391; display: flex; align-items: center; }
+    .copy-btn { background: #4a5568; color: white; border: none; border-radius: 4px; padding: 0 15px; cursor: pointer; font-weight: bold; transition: background 0.2s; white-space: nowrap; }
+    .copy-btn:hover { background: #718096; }
+    
     .back-link { display: block; margin-top: 20px; color: #a0aec0; text-decoration: none; font-size: 14px; }
 </style>
 
@@ -28,13 +35,18 @@
         <p class="subtitle">Enter your store name to get your live API key.</p>
         
         <input type="text" id="shopName" placeholder="e.g., nike" />
-        <button id="genBtn">Generate Key</button>
+        <button id="genBtn" class="main-btn">Generate Key</button>
 
         <div id="error-box"></div>
 
         <div id="result">
             <p>✅ <strong>Success!</strong> Here is your API Key:</p>
-            <div class="key-box" id="apiKeyDisplay"></div>
+            
+            <div class="key-container">
+                <div class="key-box" id="apiKeyDisplay"></div>
+                <button id="copyBtn" class="copy-btn">Copy</button>
+            </div>
+            
             <p style="font-size: 12px; color: #a0aec0; margin-top: 15px;">Save this key. It will not be shown again.</p>
         </div>
 
@@ -43,23 +55,23 @@
 </div>
 
 <script>
-    // Wait for the DOM to load before attaching the click listener
     document.addEventListener("DOMContentLoaded", () => {
         const btn = document.getElementById('genBtn');
         const input = document.getElementById('shopName');
         const result = document.getElementById('result');
         const errorBox = document.getElementById('error-box');
         const apiKeyDisplay = document.getElementById('apiKeyDisplay');
+        const copyBtn = document.getElementById('copyBtn');
 
-        // Replace this with your actual AWS URL
         const API_ENDPOINT = "https://9q2w68wtrl.execute-api.us-east-1.amazonaws.com/v1/auth/generate";
 
+        // Generate Key Logic
         btn.addEventListener('click', async () => {
             const shopName = input.value.trim().toLowerCase();
             
-            // Reset UI
             errorBox.style.display = 'none';
             result.style.display = 'none';
+            copyBtn.innerText = "Copy"; // Reset copy button
 
             if (!shopName) { 
                 errorBox.innerText = "Please enter a store name.";
@@ -86,13 +98,25 @@
                     throw new Error(data.error || "Failed to generate key.");
                 }
             } catch (err) {
-                // THIS WILL SHOW CORS ERRORS ON THE SCREEN!
-                errorBox.innerText = "Error: " + err.message + "\n\nIf this says 'Failed to fetch', it is likely a CORS issue with AWS.";
+                errorBox.innerText = "Error: " + err.message;
                 errorBox.style.display = 'block';
             } finally {
                 btn.innerText = "Generate Key";
                 btn.disabled = false;
             }
+        });
+
+        // Copy to Clipboard Logic
+        copyBtn.addEventListener('click', () => {
+            const textToCopy = apiKeyDisplay.innerText;
+            if (!textToCopy) return;
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                copyBtn.innerText = "Copied! ✅";
+                setTimeout(() => { copyBtn.innerText = "Copy"; }, 2000); // Reset after 2 seconds
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
         });
     });
 </script>
