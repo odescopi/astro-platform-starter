@@ -19,7 +19,7 @@ import Layout from '../layouts/Layout.astro';
             
             <div class="mb-4">
                 <label class="block text-sm font-bold mb-2 text-gray-300">SQL Query</label>
-                <textarea id="sqlQuery" rows="4" class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-green-400 font-mono text-sm focus:outline-none focus:border-red-400">SELECT event_type, COUNT(*) as count FROM website_analytics.events GROUP BY event_type</textarea>
+                <textarea id="sqlQuery" rows="4" class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-green-400 font-mono text-sm focus:outline-none focus:border-red-400">SELECT event_type, COUNT(*) as count FROM website_analytics.events WHERE year='2026' AND month='10' AND day='28' GROUP BY event_type</textarea>
             </div>
 
             <button id="runBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded transition-colors w-full sm:w-auto">
