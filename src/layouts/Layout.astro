@@ -1,10 +1,9 @@
 ---
-import '../../src/styles/globals.css';
+import '../styles/globals.css';
 import '@fontsource-variable/inter/wght.css';
 import interWoff2 from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-// ADD THIS IMPORT
 import Analytics from '../components/Analytics.astro';
 
 interface Props {
@@ -18,22 +17,34 @@ const { title } = Astro.props;
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <title>{title}</title>
-        <meta name="viewport" content="width=device-width" />
-        <meta name="generator" content={Astro.generator} />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="preload" as="font" type="font/woff2" href={interWoff2} crossorigin />
-    </head>
-    <body class="antialiased text-white bg-complementary">
-        <div class="flex flex-col min-h-screen px-6 bg-noise sm:px-12">
-            <div class="flex flex-col w-full max-w-5xl mx-auto grow">
-                <!-- <Header /> -->
-                <main class="pt-16"><slot /></main>
-                <!-- <Footer /> -->
-            </div>
-        </div>
+        <meta name="generator" content={Astro.generator} />
         
-        <!-- ADD THIS LINE TO USE THE ANALYTICS COMPONENT -->
+        <!-- Inter Font Loading -->
+        <link rel="preload" href={interWoff2} as="font" type="font/woff2" crossorigin />
+        
+        <title>{title}</title>
+        
+        <!-- Netlify Analytics Component (Optional) -->
         <Analytics />
+    </head>
+    <body class="bg-gray-900 text-gray-100 font-sans antialiased selection:bg-red-500 selection:text-white">
+        
+        <!-- Main Container -->
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 min-h-screen flex flex-col">
+            
+            <!-- Header -->
+            <Header />
+
+            <!-- Page Content Rendered Here -->
+            <main class="flex-grow pb-16">
+                <slot />
+            </main>
+
+            <!-- Footer -->
+            <Footer />
+
+        </div>
     </body>
 </html>
