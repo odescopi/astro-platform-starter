@@ -1,22 +1,57 @@
 ---
 import Layout from '../layouts/Layout.astro';
+const API_URL = "https://9q2w68wtrl.execute-api.us-east-1.amazonaws.com";
 ---
 
 <Layout title="GetInsightStream - Real-Time Ecommerce Analytics">
-    <h1 class="mb-6">Real-Time Ecommerce Analytics. Zero Engineering.</h1>
-    
-    <p class="mb-10 text-lg">
-        Go from data chaos to actionable insights in minutes, not months. Get a complete view of your revenue, conversions, and customer behavior without writing a single line of backend code.
-    </p>
+    <div class="max-w-4xl mx-auto py-20 px-6">
+        
+        <!-- Hero Section -->
+        <div class="text-center mb-16">
+            <h1 class="text-5xl font-extrabold mb-6 tracking-tight">Real-Time Ecommerce Analytics. <br/> Zero Engineering.</h1>
+            <p class="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
+                Plug in your event stream and query your revenue, conversions, and customer behavior instantly using standard SQL. No data engineers required.
+            </p>
+            
+            <a href="/dashboard" class="btn btn-lg btn-primary inline-block">Get Your Free API Key</a>
+        </div>
 
-    <h2 class="mb-4">Why GetInsightStream?</h2>
-    <ul class="mb-10 list-disc list-inside text-lg">
-        <li class="mb-2"><strong>Live Revenue Dashboard:</strong> See every sale, refund, and promotion impact as it happens.</li>
-        <li class="mb-2"><strong>Customer Journey Mapping:</strong> Understand exactly how users find you and what makes them buy.</li>
-        <li class="mb-2"><strong>Install & Forget:</strong> One snippet of code. We handle the rest—infrastructure, security, and maintenance.</li>
-    </ul>
+        <!-- Code Snippet -->
+        <div class="mb-20 bg-gray-900 rounded-lg overflow-hidden border border-gray-800 shadow-2xl">
+            <div class="bg-gray-800 px-4 py-2 text-sm font-mono text-gray-400">Terminal</div>
+            <pre class="p-6 text-sm font-mono text-gray-300 overflow-x-auto"><code><span class="text-gray-500"># 1. Generate your API key on the dashboard</span>
+<span class="text-gray-500"># 2. Send your first event</span>
 
-    <p>
-       <a href="mailto:demo@getinsightstream.com?subject=GetInsightStream Demo Request" class="btn btn-lg sm:min-w-64">Request a Free Demo</a>
-    </p>
+curl -X POST <span class="text-green-400 font-bold">{API_URL}/v1/events</span> \
+  -H <span class="text-yellow-300">"x-api-key: sk_live_YOUR_KEY_HERE"</span> \
+  -H <span class="text-yellow-300">"Content-Type: application/json"</span> \
+  -d '{
+    <span class="text-purple-400">"version"</span>: "1.0",
+    <span class="text-purple-400">"event_id"</span>: "evt_123",
+    <span class="text-purple-400">"event_type"</span>: "page_view",
+    <span class="text-purple-400">"event_time"</span>: "2026-10-28T12:00:00Z",
+    <span class="text-purple-400">"source"</span>: "web",
+    <span class="text-purple-400">"user"</span>: {"anonymous_id": "u_1"},
+    <span class="text-purple-400">"session"</span>: {"session_id": "s_1"},
+    <span class="text-purple-400">"page"</span>: {"url": "https://yourstore.com"}
+  }'</code></pre>
+        </div>
+
+        <!-- Features -->
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="bg-gray-800 p-8 rounded-lg border border-gray-700">
+                <h3 class="text-xl font-bold text-red-400 mb-4">1. Ingest Data Instantly</h3>
+                <p class="text-gray-400">Send events from your store using our simple REST API. We handle traffic spikes seamlessly.</p>
+            </div>
+            <div class="bg-gray-800 p-8 rounded-lg border border-gray-700">
+                <h3 class="text-xl font-bold text-red-400 mb-4">2. Multi-Tenant Isolation</h3>
+                <p class="text-gray-400">Your data is partitioned and stored securely. You are protected by enterprise-grade API keys.</p>
+            </div>
+            <div class="bg-gray-800 p-8 rounded-lg border border-gray-700">
+                <h3 class="text-xl font-bold text-red-400 mb-4">3. Query with SQL</h3>
+                <p class="text-gray-400">Run standard SQL. Our backend automatically injects tenant filters so you never see another store's data.</p>
+            </div>
+        </div>
+
+    </div>
 </Layout>
