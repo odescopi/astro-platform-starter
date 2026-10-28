@@ -1,0 +1,164 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="GetInsightStream - SQL Explorer">
+    <div class="max-w-6xl mx-auto py-12 px-6">
+        
+        <div class="mb-8">
+            <h1 class="text-3xl font-extrabold mb-2">SQL Query Explorer</h1>
+            <p class="text-gray-400">Run analytical queries against your event data.</p>
+        </div>
+
+        <!-- Configuration Box -->
+        <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 mb-6 shadow-xl">
+            <div class="mb-4">
+                <label class="block text-sm font-bold mb-2 text-gray-300">API Key</label>
+                <input type="password" id="apiKey" placeholder="sk_live_..." class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-white focus:outline-none focus:border-red-400 font-mono text-sm" />
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-bold mb-2 text-gray-300">SQL Query</label>
+                <textarea id="sqlQuery" rows="4" class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-green-400 font-mono text-sm focus:outline-none focus:border-red-400">SELECT event_type, COUNT(*) as count FROM website_analytics.events GROUP BY event_type</textarea>
+            </div>
+
+            <button id="runBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded transition-colors w-full sm:w-auto">
+                Run Query
+            </button>
+            
+            <span id="statusText" class="ml-4 text-gray-400 font-mono text-sm hidden">Running...</span>
+            <span id="errorText" class="block mt-4 text-red-400 font-mono text-sm"></span>
+        </div>
+
+        <!-- Results Box -->
+        <div id="resultsContainer" class="bg-gray-800 rounded-lg border border-gray-700 shadow-xl overflow-hidden hidden">
+            <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 text-sm font-mono text-gray-400 flex justify-between">
+                <span>Query Results</span>
+                <span id="queryTime"></span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-gray-300">
+                    <thead class="text-xs uppercase bg-gray-700 text-gray-400" id="tableHead">
+                        <!-- Headers injected here -->
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Rows injected here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="noData" class="p-6 text-center text-gray-500 hidden">No results found.</div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_ENDPOINT = "https://9q2w68wtrl.execute-api.us-east-1.amazonaws.com/v1/query";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const runBtn = document.getElementById('runBtn');
+            const apiKeyInput = document.getElementById('apiKey');
+            const sqlInput = document.getElementById('sqlQuery');
+            const statusText = document.getElementById('statusText');
+            const errorText = document.getElementById('errorText');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const tableHead = document.getElementById('tableHead');
+            const tableBody = document.getElementById('tableBody');
+            const noData = document.getElementById('noData');
+
+            runBtn.addEventListener('click', async () => {
+                const apiKey = apiKeyInput.value.trim();
+                const sql = sqlInput.value.trim();
+
+                if (!apiKey) {
+                    errorText.innerText = "Please enter your API key.";
+                    return;
+                }
+
+                // Reset UI
+                errorText.innerText = "";
+                resultsContainer.classList.add('hidden');
+                noData.classList.add('hidden');
+                statusText.classList.remove('hidden');
+                runBtn.disabled = true;
+                runBtn.classList.add('opacity-50');
+
+                try {
+                    // 1. Submit Query
+                    let response = await fetch(API_ENDPOINT, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+                        body: JSON.stringify({ sql: sql })
+                    });
+
+                    let data = await response.json();
+
+                    if (data.error) throw new Error(data.error);
+
+                    let queryId = data.query_id;
+
+                    // 2. Poll for Results
+                    while (data.status === 'STARTED' || data.status === 'RUNNING' || data.status === 'QUEUED') {
+                        statusText.innerText = `Status: ${data.status}...`;
+                        await new Promise(r => setTimeout(r, 2000)); // wait 2s
+                        
+                        response = await fetch(API_ENDPOINT, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+                            body: JSON.stringify({ query_id: queryId })
+                        });
+                        data = await response.json();
+                        if (data.error) throw new Error(data.error);
+                    }
+
+                    // 3. Render Results
+                    if (data.success) {
+                        renderTable(data.columns, data.data);
+                    }
+
+                } catch (err) {
+                    errorText.innerText = "Error: " + err.message;
+                } finally {
+                    statusText.classList.add('hidden');
+                    runBtn.disabled = false;
+                    runBtn.classList.remove('opacity-50');
+                }
+            });
+
+            function renderTable(columns, rows) {
+                tableHead.innerHTML = "";
+                tableBody.innerHTML = "";
+                
+                if (!rows || rows.length === 0) {
+                    resultsContainer.classList.remove('hidden');
+                    noData.classList.remove('hidden');
+                    return;
+                }
+
+                // Render Headers
+                const trHead = document.createElement('tr');
+                columns.forEach(col => {
+                    const th = document.createElement('th');
+                    th.className = "px-6 py-3";
+                    th.innerText = col;
+                    trHead.appendChild(th);
+                });
+                tableHead.appendChild(trHead);
+
+                // Render Rows
+                rows.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-gray-700 hover:bg-gray-750";
+                    columns.forEach(col => {
+                        const td = document.createElement('td');
+                        td.className = "px-6 py-4 font-mono text-sm";
+                        td.innerText = row[col] !== null ? row[col] : "NULL";
+                        tr.appendChild(td);
+                    });
+                    tableBody.appendChild(tr);
+                });
+
+                resultsContainer.classList.remove('hidden');
+            }
+        });
+    </script>
+</Layout>
