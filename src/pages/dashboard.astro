@@ -1,30 +1,99 @@
 ---
-// This is the Astro frontmatter block.
-// You can add imports or variables here if needed.
+// Astro Frontmatter
 ---
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GetInsightStream - Generate API Key</title>
-    <style>
-        body { font-family: system-ui, -apple-system, sans-serif; background: #1a202c; color: white; padding: 50px; text-align: center; }
-        .card { background: #2d3748; padding: 40px; border-radius: 8px; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        input { padding: 12px; width: 90%; border-radius: 4px; border: none; margin-bottom: 20px; font-size: 16px; }
-        button { padding: 12px 24px; background: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; transition: background 0.2s; }
-        button:hover { background: #ff5252; }
-        #result { margin-top: 30px; padding: 20px; background: #1a202c; border-radius: 8px; display: none; }
-        .key-box { background: #4a5568; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 18px; margin-top: 10px; word-break: break-all; color: #68d391; }
-        .back-link { display: block; margin-top: 20px; color: #a0aec0; text-decoration: none; font-size: 14px; }
-    </style>
-</head>
-<body>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GetInsightStream - Generate API Key</title>
 
+<style>
+    /* Scoped styles for this page */
+    .container { 
+        font-family: system-ui, -apple-system, sans-serif; 
+        background: #1a202c; 
+        color: white; 
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        margin: 0;
+    }
+    .card { 
+        background: #2d3748; 
+        padding: 40px; 
+        border-radius: 8px; 
+        max-width: 500px; 
+        width: 100%;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+        text-align: center;
+    }
+    .card h2 { margin-top: 0; color: #fff; }
+    .subtitle { color: #a0aec0; margin-bottom: 30px; font-size: 16px; }
+    
+    input { 
+        padding: 12px; 
+        width: 100%; 
+        box-sizing: border-box;
+        border-radius: 4px; 
+        border: 1px solid #4a5568; 
+        margin-bottom: 20px; 
+        font-size: 16px; 
+        background: #1a202c;
+        color: white;
+    }
+    input:focus { outline: none; border-color: #ff6b6b; }
+    
+    button { 
+        padding: 12px 24px; 
+        background: #ff6b6b; 
+        color: white; 
+        border: none; 
+        border-radius: 4px; 
+        cursor: pointer; 
+        font-weight: bold; 
+        font-size: 16px; 
+        width: 100%; 
+        transition: background 0.2s; 
+    }
+    button:hover { background: #ff5252; }
+    button:disabled { background: #4a5568; cursor: not-allowed; }
+
+    #result { 
+        margin-top: 30px; 
+        padding: 20px; 
+        background: #1a202c; 
+        border-radius: 8px; 
+        display: none; 
+        text-align: left;
+    }
+    #result p { margin-top: 0; }
+    
+    .key-box { 
+        background: #2d3748; 
+        padding: 15px; 
+        border-radius: 4px; 
+        font-family: monospace; 
+        font-size: 18px; 
+        margin-top: 10px; 
+        word-break: break-all; 
+        color: #68d391; 
+    }
+    
+    .back-link { 
+        display: block; 
+        margin-top: 20px; 
+        color: #a0aec0; 
+        text-decoration: none; 
+        font-size: 14px; 
+    }
+    .back-link:hover { color: #fff; }
+</style>
+
+<div class="container">
     <div class="card">
         <h2>Generate API Key</h2>
-        <p style="color: #a0aec0; margin-bottom: 30px;">Enter your store name to get your live API key.</p>
+        <p class="subtitle">Enter your store name to get your live API key.</p>
         
         <input type="text" id="shopName" placeholder="e.g., nike" />
         <button onclick="generateKey()" id="genBtn">Generate Key</button>
@@ -37,44 +106,43 @@
 
         <a href="/" class="back-link">← Back to Home</a>
     </div>
+</div>
 
-    <script>
-        // 🔴 REPLACE THIS WITH YOUR ACTUAL INGEST URL FROM CDK OUTPUTS
-        const API_ENDPOINT = "https://9q2w68wtrl.execute-api.us-east-1.amazonaws.com/v1/auth/generate";
+<script>
+    // 🔴 REPLACE THIS WITH YOUR ACTUAL INGEST URL FROM CDK OUTPUTS
+    const API_ENDPOINT = "https://9q2w68wtrl.execute-api.us-east-1.amazonaws.com/v1/auth/generate";
 
-        async function generateKey() {
-            const shopName = document.getElementById('shopName').value.trim().toLowerCase();
-            const btn = document.getElementById('genBtn');
-            
-            if (!shopName) { alert("Please enter a store name"); return; }
+    async function generateKey() {
+        const shopName = document.getElementById('shopName').value.trim().toLowerCase();
+        const btn = document.getElementById('genBtn');
+        
+        if (!shopName) { alert("Please enter a store name"); return; }
 
-            // Show loading state
-            btn.innerText = "Generating...";
-            btn.disabled = true;
+        // Show loading state
+        btn.innerText = "Generating...";
+        btn.disabled = true;
 
-            try {
-                const response = await fetch(API_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ shop_domain: shopName })
-                });
+        try {
+            const response = await fetch(API_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shop_domain: shopName })
+            });
 
-                const data = await response.json();
+            const data = await response.json();
 
-                if (data.success) {
-                    document.getElementById('result').style.display = 'block';
-                    document.getElementById('apiKeyDisplay').innerText = data.api_key;
-                } else {
-                    alert("Error: " + data.error);
-                }
-            } catch (err) {
-                alert("Network error connecting to AWS.");
-            } finally {
-                // Reset button
-                btn.innerText = "Generate Key";
-                btn.disabled = false;
+            if (data.success) {
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('apiKeyDisplay').innerText = data.api_key;
+            } else {
+                alert("Error: " + data.error);
             }
+        } catch (err) {
+            alert("Network error connecting to AWS.");
+        } finally {
+            // Reset button
+            btn.innerText = "Generate Key";
+            btn.disabled = false;
         }
-    </script>
-</body>
-</html>
+    }
+</script>
