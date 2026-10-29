@@ -1,0 +1,52 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const FLUTTERWAVE_LINK = "https://sandbox.flutterwave.com/pay/2ewldzmnpbsx"; 
+---
+
+<Layout title="GetInsightStream - Pricing">
+    <div class="max-w-6xl mx-auto py-20 px-6">
+        
+        <div class="text-center mb-16">
+            <h1 class="text-5xl font-extrabold mb-6 tracking-tight">Simple, transparent pricing.</h1>
+            <p class="text-xl text-gray-400">Start for free, upgrade when you scale.</p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            
+            <!-- Free Tier -->
+            <div class="bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-xl">
+                <h3 class="text-2xl font-bold mb-2">Starter</h3>
+                <p class="text-gray-400 mb-6">Perfect for testing the waters.</p>
+                <div class="text-4xl font-extrabold mb-6">$0<span class="text-lg text-gray-400 font-normal">/mo</span></div>
+                <ul class="mb-8 space-y-3 text-gray-300">
+                    <li>✅ 10,000 events / month</li>
+                    <li>✅ 1 API Key</li>
+                    <li>✅ 7-day data retention</li>
+                    <li>✅ Community support</li>
+                </ul>
+                <a href="/dashboard" class="block text-center w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded transition-colors">
+                    Go to Dashboard
+                </a>
+            </div>
+
+            <!-- Pro Tier -->
+            <div class="bg-gray-800 p-8 rounded-lg border-2 border-red-500 shadow-2xl relative">
+                <div class="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">MOST POPULAR</div>
+                <h3 class="text-2xl font-bold mb-2">Pro</h3>
+                <p class="text-gray-400 mb-6">For growing e-commerce stores.</p>
+                <div class="text-4xl font-extrabold mb-6">$49<span class="text-lg text-gray-400 font-normal">/mo</span></div>
+                <ul class="mb-8 space-y-3 text-gray-300">
+                    <li>✅ 250,000 events / month</li>
+                    <li>✅ 3 API Keys</li>
+                    <li>✅ 6-month data retention</li>
+                    <li>✅ Priority email support</li>
+                </ul>
+                <a href={FLUTTERWAVE_LINK} target="_blank" class="block text-center w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded transition-colors">
+                    Upgrade to Pro
+                </a>
+            </div>
+
+        </div>
+    </div>
+</Layout>
