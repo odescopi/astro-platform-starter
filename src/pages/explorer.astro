@@ -83,7 +83,7 @@ import Layout from '../layouts/Layout.astro';
             
             sqlInput.value = `SELECT event_type, COUNT(*) as count FROM website_analytics.events WHERE year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY event_type`;
 
-            // 2. Send Test Data Logic
+            // 2. Send Test Data Logic (Fixed JSON Schema)
             seedBtn.addEventListener('click', async () => {
                 const apiKey = apiKeyInput.value.trim();
                 if (!apiKey) {
@@ -100,6 +100,8 @@ import Layout from '../layouts/Layout.astro';
 
                 for (let i = 0; i < 50; i++) {
                     const randomType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+                    
+                    // THIS PAYLOAD NOW MATCHES THE GLUE TABLE SCHEMA EXACTLY
                     const payload = {
                         version: "1.0",
                         event_id: "evt_seed_" + Date.now() + "_" + i,
@@ -108,7 +110,7 @@ import Layout from '../layouts/Layout.astro';
                         source: "sandbox",
                         user: { anonymous_id: "user_" + i },
                         session: { session_id: "sess_" + i },
-                        page: { url: "https://demo-store.com" }
+                        page: { url: "https://demo-store.com/home" }
                     };
 
                     try {
