@@ -7,7 +7,6 @@
 <title>GetInsightStream - Generate API Key</title>
 
 <style>
-    /* Same styles as before */
     .container { font-family: system-ui, -apple-system, sans-serif; background: #1a202c; color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; margin: 0; }
     .card { background: #2d3748; padding: 40px; border-radius: 8px; max-width: 500px; width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.3); text-align: center; }
     .card h2 { margin-top: 0; color: #fff; }
@@ -58,23 +57,11 @@
 
     document.addEventListener("DOMContentLoaded", async () => {
         
-        // 1. Check if we just came back from Cognito (URL has ?code=...)
-        const urlParams = new URLSearchParams(window.location.search);
-        const authCode = urlParams.get('code');
-
-        if (authCode) {
-            // Exchange the code for a token (We'll use the implicit flow for simplicity, so redirect back without code)
-            // Actually, let's just use the Implicit Flow for this UI to avoid backend token exchange complexity.
-            // If the user is here with a ?code, we'll just redirect them to the login page using implicit flow.
-            window.location.href = `${COGNITO_DOMAIN}/logout?client_id=${COGNITO_CLIENT_ID}&logout_uri=${REDIRECT_URI}`;
-            return;
-        }
-
-        // 2. Check for Token in URL hash (Implicit Flow)
+        // 1. Check for Token in URL hash (Implicit Flow)
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         let idToken = hashParams.get('id_token');
         
-        // 3. Check localStorage if not in URL
+        // 2. Check localStorage if not in URL
         if (!idToken) {
             idToken = localStorage.getItem('cognito_id_token');
         } else {
@@ -83,14 +70,14 @@
             window.history.replaceState({}, document.title, window.location.pathname);
         }
 
-        // 4. If no token found, redirect to Login!
+        // 3. If no token found, redirect to Login!
         if (!idToken) {
             const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_CLIENT_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
             window.location.href = loginUrl;
             return;
         }
 
-        // 5. If we have a token, show the UI!
+        // 4. If we have a token, show the UI!
         document.getElementById('app-container').style.display = 'flex';
 
         const btn = document.getElementById('genBtn');
