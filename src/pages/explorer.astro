@@ -10,7 +10,6 @@ import Layout from '../layouts/Layout.astro';
             <p class="text-gray-400">Run analytical queries against your event data.</p>
         </div>
 
-        <!-- Configuration Box -->
         <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 mb-6 shadow-xl">
             
             <div class="mb-4">
@@ -18,15 +17,16 @@ import Layout from '../layouts/Layout.astro';
                 <input type="password" id="apiKey" placeholder="sk_live_..." class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-white focus:outline-none focus:border-red-400 font-mono text-sm" />
             </div>
 
-            <!-- The Sandbox Button -->
-            <div class="mb-6 p-4 bg-gray-900 border border-gray-700 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h3 class="font-bold text-white">Need test data?</h3>
-                    <p class="text-xs text-gray-400">Send 50 fake events to your account to see how the explorer works.</p>
+            <!-- Dynamic Sandbox -->
+            <div class="mb-6 p-4 bg-gray-900 border border-gray-700 rounded-lg flex flex-col gap-3">
+                <h3 class="font-bold text-white">Send Custom Test Events</h3>
+                <p class="text-xs text-gray-400">Type any event name you want (e.g., <code>video_watched</code>, <code>checkout</code>).</p>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input type="text" id="customEventType" placeholder="Event name" class="bg-gray-800 border border-gray-700 rounded p-2 text-white flex-grow font-mono text-sm focus:outline-none focus:border-red-400" value="video_watched" />
+                    <button id="seedBtn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded text-sm transition-colors whitespace-nowrap">
+                        ✨ Send 20 Events
+                    </button>
                 </div>
-                <button id="seedBtn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded text-sm transition-colors whitespace-nowrap">
-                    ✨ Send Test Data
-                </button>
             </div>
             
             <div class="mb-4">
@@ -38,7 +38,9 @@ import Layout from '../layouts/Layout.astro';
                 Run Query
             </button>
             
-            <span id="statusText" class="ml-4 text-gray-400 font-mono text-sm hidden">Running...</span>
+            <span id="statusText" class="ml-4 text-gray-400 font-mono text-sm hidden">
+                <span class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>Running...
+            </span>
             <span id="errorText" class="block mt-4 text-red-400 font-mono text-sm break-all"></span>
         </div>
 
@@ -46,7 +48,7 @@ import Layout from '../layouts/Layout.astro';
         <div id="resultsContainer" class="bg-gray-800 rounded-lg border border-gray-700 shadow-xl overflow-hidden hidden">
             <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 text-sm font-mono text-gray-400 flex justify-between">
                 <span>Query Results</span>
-                <span id="queryTime"></span>
+                <span id="liveIndicator" class="text-green-400 hidden animate-pulse">● Live Updating...</span>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-gray-300">
@@ -74,8 +76,10 @@ import Layout from '../layouts/Layout.astro';
             const tableHead = document.getElementById('tableHead');
             const tableBody = document.getElementById('tableBody');
             const noData = document.getElementById('noData');
+            const liveIndicator = document.getElementById('liveIndicator');
+            const customEventType = document.getElementById('customEventType');
 
-            // 1. Automatically inject today's date into the default SQL query
+            // Default SQL Query (Simplified because event_type is now a column, not a folder)
             const today = new Date();
             const yyyy = today.getFullYear();
             const mm = String(today.getMonth() + 1).padStart(2, '0'); 
@@ -83,33 +87,36 @@ import Layout from '../layouts/Layout.astro';
             
             sqlInput.value = `SELECT event_type, COUNT(*) as count FROM website_analytics.events WHERE year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY event_type`;
 
-            // 2. Send Test Data Logic
+            // Send Custom Test Data
             seedBtn.addEventListener('click', async () => {
                 const apiKey = apiKeyInput.value.trim();
+                const eventType = customEventType.value.trim();
+                
                 if (!apiKey) {
                     errorText.innerText = "Please enter your API key first.";
                     return;
                 }
+                if (!eventType) {
+                    errorText.innerText = "Please enter an event name (e.g., video_watched).";
+                    return;
+                }
                 
                 seedBtn.disabled = true;
-                seedBtn.innerText = "Sending 50 events...";
+                seedBtn.innerText = `Sending 20 '${eventType}' events...`;
                 errorText.innerText = "";
 
-                const eventTypes = ["page_view", "add_to_cart", "purchase"];
                 let successCount = 0;
 
-                for (let i = 0; i < 50; i++) {
-                    const randomType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
-                    
+                for (let i = 0; i < 20; i++) {
                     const payload = {
                         version: "1.0",
-                        event_id: "evt_seed_" + Date.now() + "_" + i,
-                        event_type: randomType,
+                        event_id: "evt_" + Date.now() + "_" + i,
+                        event_type: eventType, // <--- DYNAMIC!
                         event_time: new Date().toISOString(),
                         source: "sandbox",
                         user: { anonymous_id: "user_" + i },
                         session: { session_id: "sess_" + i },
-                        page: { url: "https://demo-store.com/home" }
+                        page: { url: "https://demo-store.com" }
                     };
 
                     try {
@@ -119,24 +126,26 @@ import Layout from '../layouts/Layout.astro';
                             body: JSON.stringify(payload)
                         });
                         successCount++;
-                        
-                        // 🛠️ THE FIX: 50ms delay to bypass API Gateway rate limits
-                        await new Promise(resolve => setTimeout(resolve, 50));
-                        
+                        await new Promise(resolve => setTimeout(resolve, 50)); // Rate limit fix
                     } catch (e) {
                         console.error("Failed to send event", e);
                     }
                 }
 
-                seedBtn.innerText = "✅ Sent " + successCount + " events! Waiting for pipeline...";
+                seedBtn.innerText = "✅ Sent! Waiting for pipeline...";
+                liveIndicator.classList.remove('hidden');
+                
+                setTimeout(() => runBtn.click(), 4000);
+                setTimeout(() => runBtn.click(), 8000);
                 setTimeout(() => {
-                    seedBtn.innerText = "✨ Send Test Data";
+                    runBtn.click();
+                    liveIndicator.classList.add('hidden');
+                    seedBtn.innerText = "✨ Send 20 Events";
                     seedBtn.disabled = false;
-                    runBtn.click(); // Automatically run the query after 4 seconds!
-                }, 8000);
+                }, 12000);
             });
 
-            // 3. Query Logic
+            // Query Logic
             runBtn.addEventListener('click', async () => {
                 const apiKey = apiKeyInput.value.trim();
                 const sql = sqlInput.value.trim();
@@ -147,8 +156,6 @@ import Layout from '../layouts/Layout.astro';
                 }
 
                 errorText.innerText = "";
-                resultsContainer.classList.add('hidden');
-                noData.classList.add('hidden');
                 statusText.classList.remove('hidden');
                 runBtn.disabled = true;
 
@@ -165,9 +172,7 @@ import Layout from '../layouts/Layout.astro';
                     let queryId = data.query_id;
 
                     while (data.status === 'STARTED' || data.status === 'RUNNING' || data.status === 'QUEUED') {
-                        statusText.innerText = `Status: ${data.status}...`;
                         await new Promise(r => setTimeout(r, 2000));
-                        
                         response = await fetch(QUERY_ENDPOINT, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
@@ -177,7 +182,10 @@ import Layout from '../layouts/Layout.astro';
                         if (data.error) throw new Error(data.error);
                     }
 
-                    if (data.success) renderTable(data.columns, data.data);
+                    if (data.success) {
+                        resultsContainer.classList.remove('hidden');
+                        renderTable(data.columns, data.data);
+                    }
 
                 } catch (err) {
                     errorText.innerText = "Error: " + err.message;
@@ -187,7 +195,7 @@ import Layout from '../layouts/Layout.astro';
                 }
             });
 
-            // 4. Render Table Logic
+            // Render Table
             function renderTable(columns, rows) {
                 tableHead.innerHTML = "";
                 tableBody.innerHTML = "";
@@ -198,6 +206,7 @@ import Layout from '../layouts/Layout.astro';
                     return;
                 }
 
+                noData.classList.add('hidden');
                 const trHead = document.createElement('tr');
                 columns.forEach(col => {
                     const th = document.createElement('th');
@@ -218,8 +227,6 @@ import Layout from '../layouts/Layout.astro';
                     });
                     tableBody.appendChild(tr);
                 });
-
-                resultsContainer.classList.remove('hidden');
             }
         });
     </script>
