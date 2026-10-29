@@ -166,7 +166,6 @@
         // 6. Logout Logic
         document.getElementById('logoutBtn').addEventListener('click', () => {
             localStorage.removeItem('cognito_id_token');
-            // Cognito requires logout_uri to be an exact match of an allowed URL
             const logoutUrl = `${COGNITO_DOMAIN}/logout?client_id=${COGNITO_CLIENT_ID}&logout_uri=${encodeURIComponent("https://getinsightstream.com")}`;
             window.location.href = logoutUrl;
         });
