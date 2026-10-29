@@ -87,6 +87,7 @@ import Layout from '../layouts/Layout.astro';
             
             sqlInput.value = `SELECT event_type, COUNT(*) as count FROM website_analytics.events WHERE year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY event_type`;
 
+
             // Send Custom Test Data
             seedBtn.addEventListener('click', async () => {
                 const apiKey = apiKeyInput.value.trim();
@@ -107,15 +108,18 @@ import Layout from '../layouts/Layout.astro';
 
                 let successCount = 0;
 
+                // 🛠️ THE FIX: Generate ONE user for this entire batch of 20 events
+                const fakeUserId = "user_" + Date.now(); 
+
                 for (let i = 0; i < 20; i++) {
                     const payload = {
                         version: "1.0",
                         event_id: "evt_" + Date.now() + "_" + i,
-                        event_type: eventType, // <--- DYNAMIC!
+                        event_type: eventType, 
                         event_time: new Date().toISOString(),
                         source: "sandbox",
-                        user: { anonymous_id: "user_" + i },
-                        session: { session_id: "sess_" + i },
+                        user: { anonymous_id: fakeUserId }, // <--- Stays the same for all 20 events
+                        session: { session_id: "sess_" + Date.now() }, // <--- One session for all 20 events
                         page: { url: "https://demo-store.com" }
                     };
 
@@ -144,6 +148,8 @@ import Layout from '../layouts/Layout.astro';
                     seedBtn.disabled = false;
                 }, 12000);
             });
+
+                
 
             // Query Logic
             runBtn.addEventListener('click', async () => {
