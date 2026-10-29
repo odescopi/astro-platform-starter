@@ -7,46 +7,41 @@
 <title>GetInsightStream - Generate API Key</title>
 
 <style>
+    /* Same styles as before */
     .container { font-family: system-ui, -apple-system, sans-serif; background: #1a202c; color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; margin: 0; }
     .card { background: #2d3748; padding: 40px; border-radius: 8px; max-width: 500px; width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.3); text-align: center; }
     .card h2 { margin-top: 0; color: #fff; }
     .subtitle { color: #a0aec0; margin-bottom: 30px; font-size: 16px; }
     input { padding: 12px; width: 100%; box-sizing: border-box; border-radius: 4px; border: 1px solid #4a5568; margin-bottom: 20px; font-size: 16px; background: #1a202c; color: white; }
     input:focus { outline: none; border-color: #ff6b6b; }
-    
-    .main-btn { padding: 12px 24px; background: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; transition: background 0.2s; }
-    .main-btn:hover { background: #ff5252; }
-    .main-btn:disabled { background: #4a5568; cursor: not-allowed; }
-    
+    button { padding: 12px 24px; background: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; transition: background 0.2s; }
+    button:hover { background: #ff5252; }
+    button:disabled { background: #4a5568; cursor: not-allowed; }
     #result { margin-top: 30px; padding: 20px; background: #1a202c; border-radius: 8px; display: none; text-align: left; }
     #error-box { margin-top: 20px; padding: 15px; background: #9b2c2c; color: white; border-radius: 4px; display: none; text-align: left; font-size: 14px; word-break: break-all; }
-    
     .key-container { display: flex; gap: 10px; margin-top: 10px; }
     .key-box { background: #2d3748; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 16px; flex-grow: 1; word-break: break-all; color: #68d391; display: flex; align-items: center; }
     .copy-btn { background: #4a5568; color: white; border: none; border-radius: 4px; padding: 0 15px; cursor: pointer; font-weight: bold; transition: background 0.2s; white-space: nowrap; }
     .copy-btn:hover { background: #718096; }
-    
     .back-link { display: block; margin-top: 20px; color: #a0aec0; text-decoration: none; font-size: 14px; }
 </style>
 
-<div class="container">
+<div class="container" id="app-container" style="display: none;">
     <div class="card">
         <h2>Generate API Key</h2>
         <p class="subtitle">Enter your store name to get your live API key.</p>
         
         <input type="text" id="shopName" placeholder="e.g., nike" />
-        <button id="genBtn" class="main-btn">Generate Key</button>
+        <button id="genBtn">Generate Key</button>
 
         <div id="error-box"></div>
 
         <div id="result">
             <p>✅ <strong>Success!</strong> Here is your API Key:</p>
-            
             <div class="key-container">
                 <div class="key-box" id="apiKeyDisplay"></div>
                 <button id="copyBtn" class="copy-btn">Copy</button>
             </div>
-            
             <p style="font-size: 12px; color: #a0aec0; margin-top: 15px;">Save this key. It will not be shown again.</p>
         </div>
 
@@ -55,7 +50,49 @@
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
+    // 🔴 COGNITO CONFIGURATION
+    const COGNITO_DOMAIN = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com";
+    const COGNITO_CLIENT_ID = "267de0qkjqbuchbijhufmso1oe";
+    const REDIRECT_URI = "https://getinsightstream.com/dashboard";
+    const API_ENDPOINT = "https://9q2w68wtrl.execute-api.us-east-1.amazonaws.com/v1/auth/generate";
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        
+        // 1. Check if we just came back from Cognito (URL has ?code=...)
+        const urlParams = new URLSearchParams(window.location.search);
+        const authCode = urlParams.get('code');
+
+        if (authCode) {
+            // Exchange the code for a token (We'll use the implicit flow for simplicity, so redirect back without code)
+            // Actually, let's just use the Implicit Flow for this UI to avoid backend token exchange complexity.
+            // If the user is here with a ?code, we'll just redirect them to the login page using implicit flow.
+            window.location.href = `${COGNITO_DOMAIN}/logout?client_id=${COGNITO_CLIENT_ID}&logout_uri=${REDIRECT_URI}`;
+            return;
+        }
+
+        // 2. Check for Token in URL hash (Implicit Flow)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        let idToken = hashParams.get('id_token');
+        
+        // 3. Check localStorage if not in URL
+        if (!idToken) {
+            idToken = localStorage.getItem('cognito_id_token');
+        } else {
+            localStorage.setItem('cognito_id_token', idToken);
+            // Clean up the URL so it looks nice
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        // 4. If no token found, redirect to Login!
+        if (!idToken) {
+            const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_CLIENT_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+            window.location.href = loginUrl;
+            return;
+        }
+
+        // 5. If we have a token, show the UI!
+        document.getElementById('app-container').style.display = 'flex';
+
         const btn = document.getElementById('genBtn');
         const input = document.getElementById('shopName');
         const result = document.getElementById('result');
@@ -63,15 +100,11 @@
         const apiKeyDisplay = document.getElementById('apiKeyDisplay');
         const copyBtn = document.getElementById('copyBtn');
 
-        const API_ENDPOINT = "https://9q2w68wtrl.execute-api.us-east-1.amazonaws.com/v1/auth/generate";
-
-        // Generate Key Logic
         btn.addEventListener('click', async () => {
             const shopName = input.value.trim().toLowerCase();
-            
             errorBox.style.display = 'none';
             result.style.display = 'none';
-            copyBtn.innerText = "Copy"; // Reset copy button
+            copyBtn.innerText = "Copy";
 
             if (!shopName) { 
                 errorBox.innerText = "Please enter a store name.";
@@ -85,7 +118,10 @@
             try {
                 const response = await fetch(API_ENDPOINT, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}` // <--- SEND THE COGNITO TOKEN
+                    },
                     body: JSON.stringify({ shop_domain: shopName })
                 });
 
@@ -106,16 +142,12 @@
             }
         });
 
-        // Copy to Clipboard Logic
         copyBtn.addEventListener('click', () => {
             const textToCopy = apiKeyDisplay.innerText;
             if (!textToCopy) return;
-
             navigator.clipboard.writeText(textToCopy).then(() => {
                 copyBtn.innerText = "Copied! ✅";
-                setTimeout(() => { copyBtn.innerText = "Copy"; }, 2000); // Reset after 2 seconds
-            }).catch(err => {
-                console.error('Failed to copy: ', err);
+                setTimeout(() => { copyBtn.innerText = "Copy"; }, 2000);
             });
         });
     });
