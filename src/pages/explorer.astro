@@ -83,7 +83,7 @@ import Layout from '../layouts/Layout.astro';
             
             sqlInput.value = `SELECT event_type, COUNT(*) as count FROM website_analytics.events WHERE year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY event_type`;
 
-            // 2. Send Test Data Logic (Fixed JSON Schema)
+            // 2. Send Test Data Logic
             seedBtn.addEventListener('click', async () => {
                 const apiKey = apiKeyInput.value.trim();
                 if (!apiKey) {
@@ -101,7 +101,6 @@ import Layout from '../layouts/Layout.astro';
                 for (let i = 0; i < 50; i++) {
                     const randomType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
                     
-                    // THIS PAYLOAD NOW MATCHES THE GLUE TABLE SCHEMA EXACTLY
                     const payload = {
                         version: "1.0",
                         event_id: "evt_seed_" + Date.now() + "_" + i,
@@ -120,6 +119,10 @@ import Layout from '../layouts/Layout.astro';
                             body: JSON.stringify(payload)
                         });
                         successCount++;
+                        
+                        // 🛠️ THE FIX: 50ms delay to bypass API Gateway rate limits
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                        
                     } catch (e) {
                         console.error("Failed to send event", e);
                     }
