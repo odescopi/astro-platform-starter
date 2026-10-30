@@ -36,7 +36,15 @@ import Layout from '../layouts/Layout.astro';
 
             function updateSnippet() {
                 const key = apiKeyInput.value.trim() || "YOUR_API_KEY_HERE";
-                const code = `<!-- GetInsightStream Tracker -->\n<script \n  src="https://getinsightstream.com/tracker.js" \n  data-api-key="${key}" \n  defer>\n</script>`;
+                
+                // Using string concatenation to avoid Astro compiler issues with backslashes
+                let code = "<!-- GetInsightStream Tracker -->\n";
+                code += "<script\n";
+                code += "  src=\"https://getinsightstream.com/tracker.js\"\n";
+                code += "  data-api-key=\"" + key + "\"\n";
+                code += "  defer>\n";
+                code += "</script>";
+                
                 snippetCode.textContent = code;
             }
 
