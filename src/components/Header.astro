@@ -1,5 +1,5 @@
 ---
-// No imports needed - fully self-contained!
+// No imports needed
 ---
 
 <nav class="flex flex-col gap-4 pt-6 pb-6 border-b border-gray-800 mb-12 px-6 max-w-6xl mx-auto w-full">
@@ -21,7 +21,7 @@
         </button>
     </div>
 
-    <!-- ROW 2: Links (Left) and Go to App (Right) -->
+    <!-- ROW 2: Links (Left) and Action Button (Right) -->
     <div class="flex flex-row items-center justify-between w-full gap-4 mt-2">
         
         <!-- App Links -->
@@ -34,7 +34,7 @@
             </div>
         </ul>
 
-        <!-- Go to App CTA -->
+        <!-- Dynamic CTA Button -->
         <a href="/dashboard" id="nav-cta" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-5 rounded transition-colors text-sm whitespace-nowrap">
             Get Started
         </a>
@@ -49,17 +49,28 @@
         const cta = document.getElementById('nav-cta');
         const logoutBtn = document.getElementById('logoutBtnHeader');
         
+        // Get the current page path (e.g., "/dashboard", "/install")
+        const currentPath = window.location.pathname;
+
         if (token) {
-            // Logged in: Show app links, change CTA, show Logout
+            // Logged In: Show app links, show Logout
             authLinks.classList.remove('hidden');
             authLinks.classList.add('flex');
-            cta.innerText = "Go to App";
             logoutBtn.classList.remove('hidden');
+            
+            // Context-Aware Button Logic
+            if (currentPath === '/dashboard' || currentPath === '/dashboard/') {
+                // If on Dashboard, hide the red button entirely (because they are already there)
+                cta.classList.add('hidden');
+            } else {
+                // If on Install/Explorer/Home, show "Go to Dashboard"
+                cta.innerText = "Go to Dashboard";
+                cta.href = "/dashboard";
+            }
             
             // Logout logic
             logoutBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                
                 logoutBtn.innerText = "Logging out...";
                 logoutBtn.disabled = true;
                 logoutBtn.classList.add('opacity-50');
