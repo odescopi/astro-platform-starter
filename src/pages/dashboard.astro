@@ -3,7 +3,14 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="GetInsightStream - Dashboard">
-    <!-- 🛠️ THE FIX: Hidden by default to prevent the dashboard from flashing before auth check -->
+    
+    <!-- 🛠️ THE NO-FLASH FIX: Hide the body until JavaScript verifies the token -->
+    <style>
+        body {
+            visibility: hidden;
+        }
+    </style>
+
     <div id="app-container" class="max-w-4xl mx-auto py-12 px-6" style="display: none;">
         
         <div class="mb-8">
@@ -49,7 +56,7 @@ import Layout from '../layouts/Layout.astro';
         }
 
         document.addEventListener("DOMContentLoaded", async () => {
-            // 1. Check for Token
+            // 1. Check for Token in URL or LocalStorage
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
             let idToken = hashParams.get('id_token');
             
@@ -60,29 +67,28 @@ import Layout from '../layouts/Layout.astro';
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
 
-            // 2. Redirect to Login if no token (The page remains hidden while this happens)
+            // 2. If NO token, redirect immediately (Page stays hidden because of CSS)
             if (!idToken) {
                 const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_CLIENT_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
                 window.location.href = loginUrl;
                 return;
             }
 
-            // 3. Show User Info & Reveal the Dashboard
+            // 3. If we HAVE a token, reveal the page instantly!
+            document.body.style.visibility = 'visible';
+
+            // 4. Show User Info & Reveal the Dashboard Container
             try {
                 const user = parseJwt(idToken);
                 const email = user.email || "User";
                 document.getElementById('userFirstName').innerText = email.split('@')[0];
-                
-                // 🛠️ THE FIX: Reveal the dashboard now that we know they are logged in
                 document.getElementById('app-container').style.display = 'block';
-                
             } catch (e) {
-                // If the token is malformed, clear it and reload to force login
                 localStorage.removeItem('cognito_id_token');
                 window.location.reload();
             }
 
-            // 4. Generate Key Logic
+            // 5. Generate Key Logic
             const btn = document.getElementById('genBtn');
             const input = document.getElementById('shopName');
             const result = document.getElementById('result');
