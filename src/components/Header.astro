@@ -11,18 +11,19 @@ import Logo from '../components/Logo.astro';
     <ul class="flex flex-wrap items-center gap-x-6 gap-y-2">
         <li><a href="/pricing" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Pricing</a></li>
         
-        <!-- The "App" Links (Only show these if they have a token in localStorage) -->
         <div id="auth-links" class="hidden sm:flex items-center gap-x-6">
-            <li><a href="/dashboard" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Dashboard</a></li>
             <li><a href="/install" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Install</a></li>
             <li><a href="/explorer" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">SQL Explorer</a></li>
         </div>
         
-        <!-- The CTA / Login Button -->
-        <li>
+        <!-- The CTA and Logout Area -->
+        <li class="flex items-center gap-x-4">
             <a href="/dashboard" id="nav-cta" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-5 rounded transition-colors text-sm">
                 Get Started
             </a>
+            <button id="logoutBtnHeader" class="hidden text-gray-400 hover:text-white text-sm font-medium transition-colors">
+                Log Out
+            </button>
         </li>
     </ul>
 </nav>
@@ -32,11 +33,22 @@ import Logo from '../components/Logo.astro';
         const token = localStorage.getItem('cognito_id_token');
         const authLinks = document.getElementById('auth-links');
         const cta = document.getElementById('nav-cta');
+        const logoutBtn = document.getElementById('logoutBtnHeader');
         
         if (token) {
-            // Logged in: Show app links, change CTA to "Go to App"
+            // Logged in: Show app links, change CTA, show Logout
             authLinks.classList.remove('hidden');
             cta.innerText = "Go to App";
+            logoutBtn.classList.remove('hidden');
+            
+            // Logout logic inside the Header
+            logoutBtn.addEventListener('click', () => {
+                localStorage.removeItem('cognito_id_token');
+                const COGNITO_DOMAIN = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com";
+                const COGNITO_CLIENT_ID = "267de0qkjqbuchbijhufmso1oe";
+                const logoutUrl = `${COGNITO_DOMAIN}/logout?client_id=${COGNITO_CLIENT_ID}&logout_uri=${encodeURIComponent("https://getinsightstream.com")}`;
+                window.location.href = logoutUrl;
+            });
         }
     });
 </script>
