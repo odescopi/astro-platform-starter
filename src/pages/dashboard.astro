@@ -3,7 +3,8 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="GetInsightStream - Dashboard">
-    <div class="max-w-4xl mx-auto py-12 px-6">
+    <!-- 🛠️ THE FIX: Hidden by default to prevent the dashboard from flashing before auth check -->
+    <div id="app-container" class="max-w-4xl mx-auto py-12 px-6" style="display: none;">
         
         <div class="mb-8">
             <h1 class="text-3xl font-extrabold mb-2">Dashboard</h1>
@@ -59,19 +60,24 @@ import Layout from '../layouts/Layout.astro';
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
 
-            // 2. Redirect to Login if no token
+            // 2. Redirect to Login if no token (The page remains hidden while this happens)
             if (!idToken) {
                 const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_CLIENT_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
                 window.location.href = loginUrl;
                 return;
             }
 
-            // 3. Show User Info
+            // 3. Show User Info & Reveal the Dashboard
             try {
                 const user = parseJwt(idToken);
                 const email = user.email || "User";
                 document.getElementById('userFirstName').innerText = email.split('@')[0];
+                
+                // 🛠️ THE FIX: Reveal the dashboard now that we know they are logged in
+                document.getElementById('app-container').style.display = 'block';
+                
             } catch (e) {
+                // If the token is malformed, clear it and reload to force login
                 localStorage.removeItem('cognito_id_token');
                 window.location.reload();
             }
