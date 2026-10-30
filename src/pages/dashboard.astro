@@ -1,232 +1,145 @@
 ---
-// Astro Frontmatter
+import Layout from '../layouts/Layout.astro';
 ---
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GetInsightStream - Dashboard</title>
-
-<style>
-    :root {
-        --bg: #0f172a;
-        --card-bg: #1e293b;
-        --text: #f8fafc;
-        --text-muted: #94a3b8;
-        --accent: #ff6b6b;
-        --accent-hover: #ff5252;
-    }
-    body {
-        font-family: system-ui, -apple-system, sans-serif;
-        background-color: var(--bg);
-        color: var(--text);
-        margin: 0;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    /* Navbar */
-    .navbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 40px;
-        border-bottom: 1px solid #334155;
-        background: var(--card-bg);
-    }
-    .logo { font-size: 20px; font-weight: 800; color: var(--text); text-decoration: none; }
-    .nav-links { display: flex; gap: 20px; align-items: center; }
-    .nav-links a { color: var(--text-muted); text-decoration: none; font-weight: 500; }
-    .nav-links a:hover { color: var(--text); }
-    .user-email { color: var(--accent); font-family: monospace; font-size: 14px; background: rgba(255,107,107,0.1); padding: 5px 10px; border-radius: 4px;}
-    .logout-btn { background: transparent; border: 1px solid #475569; color: #cbd5e1; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
-    .logout-btn:hover { background: #334155; }
-
-    /* Main Content */
-    .main-content {
-        flex-grow: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 40px 20px;
-    }
-    
-    .card { 
-        background: var(--card-bg); 
-        padding: 40px; 
-        border-radius: 8px; 
-        max-width: 500px; 
-        width: 100%; 
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
-        text-align: center; 
-        border: 1px solid #334155;
-    }
-    .card h2 { margin-top: 0; color: #fff; font-size: 28px; }
-    .welcome-text { font-size: 18px; color: var(--text-muted); margin-bottom: 30px; }
-    .welcome-text span { color: var(--text); font-weight: bold; }
-    
-    input { padding: 14px; width: 100%; box-sizing: border-box; border-radius: 4px; border: 1px solid #4a5568; margin-bottom: 20px; font-size: 16px; background: var(--bg); color: white; }
-    input:focus { outline: none; border-color: var(--accent); }
-    
-    button.primary-btn { padding: 14px; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; transition: background 0.2s; }
-    button.primary-btn:hover { background: var(--accent-hover); }
-    button.primary-btn:disabled { background: #4a5568; cursor: not-allowed; }
-    
-    #result { margin-top: 30px; padding: 20px; background: var(--bg); border-radius: 8px; display: none; text-align: left; border: 1px solid #334155; }
-    #error-box { margin-top: 20px; padding: 15px; background: #9b2c2c; color: white; border-radius: 4px; display: none; text-align: left; font-size: 14px; }
-    
-    .key-container { display: flex; gap: 10px; margin-top: 10px; }
-    .key-box { background: var(--card-bg); padding: 15px; border-radius: 4px; font-family: monospace; font-size: 16px; flex-grow: 1; word-break: break-all; color: #68d391; display: flex; align-items: center; border: 1px solid #475569; }
-    .copy-btn { background: #4a5568; color: white; border: none; border-radius: 4px; padding: 0 15px; cursor: pointer; font-weight: bold; transition: background 0.2s; white-space: nowrap; }
-    .copy-btn:hover { background: #718096; }
-</style>
-
-<!-- Navbar (Hidden until logged in) -->
-<nav class="navbar" id="navbar" style="display: none;">
-    <a href="/" class="logo">GetInsightStream</a>
-    <div class="nav-links">
-        <a href="/explorer">SQL Explorer</a>
-        <span class="user-email" id="userEmailDisplay"></span>
-        <button class="logout-btn" id="logoutBtn">Log Out</button>
-    </div>
-</nav>
-
-<!-- Main Content -->
-<div class="main-content" id="app-container" style="display: none;">
-    <div class="card">
-        <h2>Dashboard</h2>
-        <p class="welcome-text">Welcome back, <span id="userFirstName">User</span>!</p>
+<Layout title="GetInsightStream - Dashboard">
+    <div class="max-w-4xl mx-auto py-12 px-6">
         
-        <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 14px;">Generate a new API key for your store.</p>
-        <input type="text" id="shopName" placeholder="e.g., nike" />
-        <button class="primary-btn" id="genBtn">Generate API Key</button>
-
-        <div id="error-box"></div>
-
-        <div id="result">
-            <p style="margin-top: 0;">✅ <strong>Success!</strong> Here is your API Key:</p>
-            <div class="key-container">
-                <div class="key-box" id="apiKeyDisplay"></div>
-                <button id="copyBtn" class="copy-btn">Copy</button>
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-extrabold mb-2">Dashboard</h1>
+                <p class="text-gray-400">Welcome back, <span id="userFirstName" class="text-white font-bold">User</span>!</p>
             </div>
-            <p style="font-size: 12px; color: var(--text-muted); margin-top: 15px;">Save this key. It will not be shown again.</p>
+            <button id="logoutBtn" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white text-sm font-bold py-2 px-4 rounded transition-colors">
+                Log Out
+            </button>
+        </div>
+
+        <div class="bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-xl max-w-xl">
+            <h2 class="text-xl font-bold mb-4 text-white">Generate API Key</h2>
+            <p class="text-sm text-gray-400 mb-6">Generate a new API key to start sending events from your store.</p>
+            
+            <input type="text" id="shopName" placeholder="e.g., nike" class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-white focus:outline-none focus:border-red-400 mb-4" />
+            <button id="genBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded transition-colors w-full">
+                Generate Key
+            </button>
+
+            <div id="error-box" class="mt-4 text-red-400 font-mono text-sm hidden break-all"></div>
+
+            <div id="result" class="mt-6 hidden">
+                <p class="text-sm text-gray-400 mb-2">✅ <strong>Success!</strong> Here is your API Key:</p>
+                <div class="flex gap-2">
+                    <div id="apiKeyDisplay" class="bg-gray-900 border border-gray-700 p-3 rounded font-mono text-green-400 flex-grow text-sm break-all"></div>
+                    <button id="copyBtn" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded font-bold text-sm transition-colors">Copy</button>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Save this key. It will not be shown again.</p>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    // 🔴 COGNITO CONFIGURATION
-    const COGNITO_DOMAIN = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com";
-    const COGNITO_CLIENT_ID = "267de0qkjqbuchbijhufmso1oe";
-    const REDIRECT_URI = "https://getinsightstream.com/dashboard";
-    const API_ENDPOINT = "https://9q2w68wtrl.execute-api.us-east-1.amazonaws.com/v1/auth/generate";
+    <script>
+        const COGNITO_DOMAIN = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com";
+        const COGNITO_CLIENT_ID = "267de0qkjqbuchbijhufmso1oe";
+        const REDIRECT_URI = "https://getinsightstream.com/dashboard";
+        const API_ENDPOINT = "https://9q2w68wtrl.execute-api.us-east-1.amazonaws.com/v1/auth/generate";
 
-    // Helper to parse JWT payload
-    function parseJwt (token) {
-        var base64Url = token.split('.')[1];
-        var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-        return JSON.parse(jsonPayload);
-    }
-
-    document.addEventListener("DOMContentLoaded", async () => {
-        
-        // 1. Check for Token in URL hash (Implicit Flow)
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        let idToken = hashParams.get('id_token');
-        
-        // 2. Check localStorage if not in URL
-        if (!idToken) {
-            idToken = localStorage.getItem('cognito_id_token');
-        } else {
-            localStorage.setItem('cognito_id_token', idToken);
-            window.history.replaceState({}, document.title, window.location.pathname);
+        function parseJwt(token) {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
         }
 
-        // 3. If no token found, redirect to Login!
-        if (!idToken) {
-            const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_CLIENT_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
-            window.location.href = loginUrl;
-            return;
-        }
-
-        // 4. Decode Token to get User Email
-        const user = parseJwt(idToken);
-        const email = user.email || "Unknown User";
-        const firstName = email.split('@')[0]; // Get everything before @
-
-        // 5. Update UI with User Info
-        document.getElementById('app-container').style.display = 'flex';
-        document.getElementById('navbar').style.display = 'flex';
-        document.getElementById('userEmailDisplay').innerText = email;
-        document.getElementById('userFirstName').innerText = firstName;
-
-        // 6. Logout Logic
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('cognito_id_token');
-            const logoutUrl = `${COGNITO_DOMAIN}/logout?client_id=${COGNITO_CLIENT_ID}&logout_uri=${encodeURIComponent("https://getinsightstream.com")}`;
-            window.location.href = logoutUrl;
-        });
-
-        // 7. Generate Key Logic
-        const btn = document.getElementById('genBtn');
-        const input = document.getElementById('shopName');
-        const result = document.getElementById('result');
-        const errorBox = document.getElementById('error-box');
-        const apiKeyDisplay = document.getElementById('apiKeyDisplay');
-        const copyBtn = document.getElementById('copyBtn');
-
-        btn.addEventListener('click', async () => {
-            const shopName = input.value.trim().toLowerCase();
-            errorBox.style.display = 'none';
-            result.style.display = 'none';
-            copyBtn.innerText = "Copy";
-
-            if (!shopName) { 
-                errorBox.innerText = "Please enter a store name.";
-                errorBox.style.display = 'block';
-                return; 
+        document.addEventListener("DOMContentLoaded", async () => {
+            // 1. Check for Token
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            let idToken = hashParams.get('id_token');
+            
+            if (!idToken) {
+                idToken = localStorage.getItem('cognito_id_token');
+            } else {
+                localStorage.setItem('cognito_id_token', idToken);
+                window.history.replaceState({}, document.title, window.location.pathname);
             }
 
-            btn.innerText = "Generating...";
-            btn.disabled = true;
+            // 2. Redirect to Login if no token
+            if (!idToken) {
+                const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_CLIENT_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+                window.location.href = loginUrl;
+                return;
+            }
 
-            try {
-                const response = await fetch(API_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${idToken}`
-                    },
-                    body: JSON.stringify({ shop_domain: shopName })
-                });
+            // 3. Show User Info
+            const user = parseJwt(idToken);
+            const email = user.email || "User";
+            document.getElementById('userFirstName').innerText = email.split('@')[0];
 
-                const data = await response.json();
+            // 4. Logout Logic
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                localStorage.removeItem('cognito_id_token');
+                const logoutUrl = `${COGNITO_DOMAIN}/logout?client_id=${COGNITO_CLIENT_ID}&logout_uri=${encodeURIComponent("https://getinsightstream.com")}`;
+                window.location.href = logoutUrl;
+            });
 
-                if (data.success) {
-                    result.style.display = 'block';
-                    apiKeyDisplay.innerText = data.api_key;
-                } else {
-                    throw new Error(data.error || "Failed to generate key.");
+            // 5. Generate Key Logic
+            const btn = document.getElementById('genBtn');
+            const input = document.getElementById('shopName');
+            const result = document.getElementById('result');
+            const errorBox = document.getElementById('error-box');
+            const apiKeyDisplay = document.getElementById('apiKeyDisplay');
+            const copyBtn = document.getElementById('copyBtn');
+
+            btn.addEventListener('click', async () => {
+                const shopName = input.value.trim().toLowerCase();
+                errorBox.classList.add('hidden');
+                result.classList.add('hidden');
+
+                if (!shopName) {
+                    errorBox.innerText = "Please enter a store name.";
+                    errorBox.classList.remove('hidden');
+                    return;
                 }
-            } catch (err) {
-                errorBox.innerText = "Error: " + err.message;
-                errorBox.style.display = 'block';
-            } finally {
-                btn.innerText = "Generate API Key";
-                btn.disabled = false;
-            }
-        });
 
-        copyBtn.addEventListener('click', () => {
-            const textToCopy = apiKeyDisplay.innerText;
-            if (!textToCopy) return;
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                copyBtn.innerText = "Copied! ✅";
-                setTimeout(() => { copyBtn.innerText = "Copy"; }, 2000);
+                btn.innerText = "Generating...";
+                btn.disabled = true;
+
+                try {
+                    const response = await fetch(API_ENDPOINT, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${idToken}`
+                        },
+                        body: JSON.stringify({ shop_domain: shopName })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        result.classList.remove('hidden');
+                        apiKeyDisplay.innerText = data.api_key;
+                    } else {
+                        throw new Error(data.error || "Failed to generate key.");
+                    }
+                } catch (err) {
+                    errorBox.innerText = "Error: " + err.message;
+                    errorBox.classList.remove('hidden');
+                } finally {
+                    btn.innerText = "Generate Key";
+                    btn.disabled = false;
+                }
+            });
+
+            copyBtn.addEventListener('click', () => {
+                const textToCopy = apiKeyDisplay.innerText;
+                if (!textToCopy) return;
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    copyBtn.innerText = "Copied! ✅";
+                    setTimeout(() => { copyBtn.innerText = "Copy"; }, 2000);
+                });
             });
         });
-    });
-</script>
+    </script>
+</Layout>
