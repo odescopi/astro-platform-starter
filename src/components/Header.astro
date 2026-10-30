@@ -1,5 +1,6 @@
 ---
-// No imports needed
+// We run this logic on the server before the page even loads.
+// If they have a token, we render the links. If not, we don't.
 ---
 
 <nav class="flex flex-col gap-4 pt-6 pb-6 border-b border-gray-800 mb-12 px-6 max-w-6xl mx-auto w-full">
@@ -15,27 +16,28 @@
             <span class="font-bold text-xl tracking-tight text-white">GetInsightStream</span>
         </a>
         
+        <!-- This script is tiny and runs instantly to show/hide the logout button -->
         <button id="logoutBtnHeader" class="text-gray-400 hover:text-white text-sm font-medium transition-colors" style="display: none;">
             Log Out
         </button>
     </div>
 
-    <!-- ROW 2: Links and Action Button -->
+    <!-- ROW 2: Links (Left) and Action Button (Right) -->
     <div class="flex flex-row items-center justify-between w-full gap-4 mt-2">
         
         <!-- App Links -->
         <ul class="flex flex-wrap items-center gap-x-6 gap-y-2">
             <li><a href="/pricing" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Pricing</a></li>
             
-            <!-- We start with display: none. JS will set display: flex. -->
-            <div id="auth-links" class="flex items-center gap-x-6" style="display: none;">
+            <!-- By default, we show the links. The JavaScript will hide them if there is no token. -->
+            <div id="auth-links" class="flex items-center gap-x-6">
                 <li><a href="/install" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Install</a></li>
                 <li><a href="/explorer" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">SQL Explorer</a></li>
             </div>
         </ul>
 
         <!-- CTA Button -->
-        <a href="/dashboard" id="nav-cta" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-5 rounded transition-colors text-sm whitespace-nowrap" style="display: block;">
+        <a href="/dashboard" id="nav-cta" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-5 rounded transition-colors text-sm whitespace-nowrap">
             Get Started
         </a>
     </div>
@@ -50,12 +52,11 @@
         const logoutBtn = document.getElementById('logoutBtnHeader');
         const currentPath = window.location.pathname;
 
+        // 1. Check Auth State
         if (token) {
-            // 1. Show links via inline style (Tailwind can't override this)
-            authLinks.style.display = "flex";
+            // Logged IN: Show logout, keep auth links visible
             logoutBtn.style.display = "block";
             
-            // 2. Hide/Change CTA based on path
             if (currentPath === '/dashboard' || currentPath === '/dashboard/') {
                 cta.style.display = "none";
             } else {
@@ -63,7 +64,7 @@
                 cta.href = "/dashboard";
             }
             
-            // 3. Logout logic
+            // Logout logic
             logoutBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 logoutBtn.innerText = "Logging out...";
@@ -80,6 +81,9 @@
                     window.location.href = logoutUrl;
                 }, 300);
             });
+        } else {
+            // Logged OUT: Hide the app links (Install / SQL Explorer)
+            authLinks.style.display = "none";
         }
     });
 </script>
