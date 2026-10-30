@@ -4,12 +4,35 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout title="GetInsightStream - Dashboard">
     
-    <!-- 🛠️ THE NO-FLASH FIX: Hide the body until JavaScript verifies the token -->
-    <style>
-        body {
-            visibility: hidden;
-        }
-    </style>
+    <!-- 🛠️ THE ZERO-FLASH FIX -->
+    <script is:inline>
+        (function() {
+            const COGNITO_DOMAIN = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com";
+            const COGNITO_CLIENT_ID = "267de0qkjqbuchbijhufmso1oe";
+            const REDIRECT_URI = "https://getinsightstream.com/dashboard";
+
+            // 1. Check for Token in URL hash
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            let idToken = hashParams.get('id_token');
+            
+            if (idToken) {
+                localStorage.setItem('cognito_id_token', idToken);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else {
+                idToken = localStorage.getItem('cognito_id_token');
+            }
+
+            // 2. If no token, hide the body and redirect INSTANTLY
+            if (!idToken) {
+                document.documentElement.style.visibility = 'hidden'; // Hide the whole HTML immediately
+                const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_CLIENT_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+                window.location.href = loginUrl;
+            } else {
+                // 3. If they have a token, show the page
+                document.documentElement.style.visibility = 'visible';
+            }
+        })();
+    </script>
 
     <div id="app-container" class="max-w-4xl mx-auto py-12 px-6" style="display: none;">
         
@@ -41,9 +64,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
 
     <script>
-        const COGNITO_DOMAIN = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com";
-        const COGNITO_CLIENT_ID = "267de0qkjqbuchbijhufmso1oe";
-        const REDIRECT_URI = "https://getinsightstream.com/dashboard";
+        // This script runs AFTER the page is rendered (so we know they are authenticated)
         const API_ENDPOINT = "https://9q2w68wtrl.execute-api.us-east-1.amazonaws.com/v1/auth/generate";
 
         function parseJwt(token) {
@@ -55,40 +76,24 @@ import Layout from '../layouts/Layout.astro';
             return JSON.parse(jsonPayload);
         }
 
-        document.addEventListener("DOMContentLoaded", async () => {
-            // 1. Check for Token in URL or LocalStorage
-            const hashParams = new URLSearchParams(window.location.hash.substring(1));
-            let idToken = hashParams.get('id_token');
-            
-            if (!idToken) {
-                idToken = localStorage.getItem('cognito_id_token');
-            } else {
-                localStorage.setItem('cognito_id_token', idToken);
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }
+        document.addEventListener("DOMContentLoaded", () => {
+            const idToken = localStorage.getItem('cognito_id_token');
+            if (!idToken) return; // If they somehow get here without a token, do nothing.
 
-            // 2. If NO token, redirect immediately (Page stays hidden because of CSS)
-            if (!idToken) {
-                const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_CLIENT_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
-                window.location.href = loginUrl;
-                return;
-            }
+            // Reveal the dashboard container
+            document.getElementById('app-container').style.display = 'block';
 
-            // 3. If we HAVE a token, reveal the page instantly!
-            document.body.style.visibility = 'visible';
-
-            // 4. Show User Info & Reveal the Dashboard Container
+            // Show User Info
             try {
                 const user = parseJwt(idToken);
                 const email = user.email || "User";
                 document.getElementById('userFirstName').innerText = email.split('@')[0];
-                document.getElementById('app-container').style.display = 'block';
             } catch (e) {
                 localStorage.removeItem('cognito_id_token');
                 window.location.reload();
             }
 
-            // 5. Generate Key Logic
+            // Generate Key Logic
             const btn = document.getElementById('genBtn');
             const input = document.getElementById('shopName');
             const result = document.getElementById('result');
