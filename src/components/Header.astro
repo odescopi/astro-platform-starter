@@ -15,27 +15,25 @@
             <span class="font-bold text-xl tracking-tight text-white">GetInsightStream</span>
         </a>
         
-        <!-- Logout (Top Right) -->
         <button id="logoutBtnHeader" class="hidden text-gray-400 hover:text-white text-sm font-medium transition-colors">
             Log Out
         </button>
     </div>
 
     <!-- ROW 2: Links (Left) and Action Button (Right) -->
-    <div class="flex flex-row items-center justify-between w-full gap-4 mt-2">
+    <div class="flex flex-wrap items-center justify-between w-full gap-4 mt-2">
         
         <!-- App Links -->
         <ul class="flex flex-wrap items-center gap-x-6 gap-y-2">
             <li><a href="/pricing" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Pricing</a></li>
             
-            <!-- FIXED: Removed sm:flex so they show on mobile when logged in -->
-            <div id="auth-links" class="hidden items-center gap-x-6">
+            <!-- I removed 'hidden' entirely from this div. JavaScript will control it. -->
+            <div id="auth-links" class="flex items-center gap-x-6 hidden">
                 <li><a href="/install" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Install</a></li>
                 <li><a href="/explorer" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">SQL Explorer</a></li>
             </div>
         </ul>
 
-        <!-- Dynamic CTA Button -->
         <a href="/dashboard" id="nav-cta" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-5 rounded transition-colors text-sm whitespace-nowrap">
             Get Started
         </a>
@@ -49,12 +47,13 @@
         const authLinks = document.getElementById('auth-links');
         const cta = document.getElementById('nav-cta');
         const logoutBtn = document.getElementById('logoutBtnHeader');
-        
         const currentPath = window.location.pathname;
 
+        console.log("Header Script Loaded. Token exists:", !!token);
+
         if (token) {
+            console.log("User is logged in. Revealing links.");
             authLinks.classList.remove('hidden');
-            authLinks.classList.add('flex');
             logoutBtn.classList.remove('hidden');
             
             if (currentPath === '/dashboard' || currentPath === '/dashboard/') {
