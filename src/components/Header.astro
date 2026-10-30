@@ -1,6 +1,5 @@
 ---
-// We run this logic on the server before the page even loads.
-// If they have a token, we render the links. If not, we don't.
+// No imports needed
 ---
 
 <nav class="flex flex-col gap-4 pt-6 pb-6 border-b border-gray-800 mb-12 px-6 max-w-6xl mx-auto w-full">
@@ -16,8 +15,7 @@
             <span class="font-bold text-xl tracking-tight text-white">GetInsightStream</span>
         </a>
         
-        <!-- This script is tiny and runs instantly to show/hide the logout button -->
-        <button id="logoutBtnHeader" class="text-gray-400 hover:text-white text-sm font-medium transition-colors" style="display: none;">
+        <button id="logoutBtnHeader" class="text-gray-400 hover:text-white text-sm font-medium transition-colors hidden">
             Log Out
         </button>
     </div>
@@ -29,8 +27,8 @@
         <ul class="flex flex-wrap items-center gap-x-6 gap-y-2">
             <li><a href="/pricing" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Pricing</a></li>
             
-            <!-- By default, we show the links. The JavaScript will hide them if there is no token. -->
-            <div id="auth-links" class="flex items-center gap-x-6">
+            <!-- Using a specific ID for direct targeting -->
+            <div id="auth-links" class="hidden items-center gap-x-6">
                 <li><a href="/install" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Install</a></li>
                 <li><a href="/explorer" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">SQL Explorer</a></li>
             </div>
@@ -44,46 +42,35 @@
 
 </nav>
 
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
+<!-- INLINE SCRIPT: Runs instantly, bypasses Astro bundling and browser cache -->
+<script is:inline>
+    (function() {
         const token = localStorage.getItem('cognito_id_token');
         const authLinks = document.getElementById('auth-links');
         const cta = document.getElementById('nav-cta');
         const logoutBtn = document.getElementById('logoutBtnHeader');
-        const currentPath = window.location.pathname;
-
-        // 1. Check Auth State
+        
         if (token) {
-            // Logged IN: Show logout, keep auth links visible
-            logoutBtn.style.display = "block";
-            
+            // Logged In
+            authLinks.classList.remove('hidden');
+            authLinks.classList.add('flex');
+            logoutBtn.classList.remove('hidden');
+
+            const currentPath = window.location.pathname;
             if (currentPath === '/dashboard' || currentPath === '/dashboard/') {
                 cta.style.display = "none";
             } else {
                 cta.innerText = "Go to Dashboard";
-                cta.href = "/dashboard";
             }
-            
-            // Logout logic
+
             logoutBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                logoutBtn.innerText = "Logging out...";
-                logoutBtn.disabled = true;
-                logoutBtn.style.opacity = "0.5";
-
                 localStorage.removeItem('cognito_id_token');
-                
                 const COGNITO_DOMAIN = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com";
                 const COGNITO_CLIENT_ID = "267de0qkjqbuchbijhufmso1oe";
                 const logoutUrl = `${COGNITO_DOMAIN}/logout?client_id=${COGNITO_CLIENT_ID}&logout_uri=${encodeURIComponent("https://getinsightstream.com")}`;
-                
-                setTimeout(() => {
-                    window.location.href = logoutUrl;
-                }, 300);
+                window.location.href = logoutUrl;
             });
-        } else {
-            // Logged OUT: Hide the app links (Install / SQL Explorer)
-            authLinks.style.display = "none";
         }
-    });
+    })();
 </script>
