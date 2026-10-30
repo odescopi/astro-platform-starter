@@ -20,21 +20,22 @@
         </button>
     </div>
 
-    <!-- ROW 2: Links (Left) and Action Button (Right) -->
-    <div class="flex flex-wrap items-center justify-between w-full gap-4 mt-2">
+    <!-- ROW 2: Links and Action Button -->
+    <div class="flex flex-row items-center justify-between w-full gap-4 mt-2">
         
         <!-- App Links -->
         <ul class="flex flex-wrap items-center gap-x-6 gap-y-2">
             <li><a href="/pricing" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Pricing</a></li>
             
-            <!-- Using inline style for the hidden state -->
+            <!-- We start with display: none. JS will set display: flex. -->
             <div id="auth-links" class="flex items-center gap-x-6" style="display: none;">
                 <li><a href="/install" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Install</a></li>
                 <li><a href="/explorer" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">SQL Explorer</a></li>
             </div>
         </ul>
 
-        <a href="/dashboard" id="nav-cta" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-5 rounded transition-colors text-sm whitespace-nowrap">
+        <!-- CTA Button -->
+        <a href="/dashboard" id="nav-cta" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-5 rounded transition-colors text-sm whitespace-nowrap" style="display: block;">
             Get Started
         </a>
     </div>
@@ -43,7 +44,6 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", () => {
-        // Using inline style to bypass all CSS conflicts
         const token = localStorage.getItem('cognito_id_token');
         const authLinks = document.getElementById('auth-links');
         const cta = document.getElementById('nav-cta');
@@ -51,18 +51,19 @@
         const currentPath = window.location.pathname;
 
         if (token) {
-            // Show links via inline style
+            // 1. Show links via inline style (Tailwind can't override this)
             authLinks.style.display = "flex";
             logoutBtn.style.display = "block";
             
+            // 2. Hide/Change CTA based on path
             if (currentPath === '/dashboard' || currentPath === '/dashboard/') {
                 cta.style.display = "none";
             } else {
                 cta.innerText = "Go to Dashboard";
                 cta.href = "/dashboard";
-                cta.style.display = "block";
             }
             
+            // 3. Logout logic
             logoutBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 logoutBtn.innerText = "Logging out...";
