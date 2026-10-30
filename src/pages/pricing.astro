@@ -1,8 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-// New Paystack Link
 const PAYSTACK_LINK = "https://paystack.shop/pay/getinsightstream"; 
-
 ---
 
 <Layout title="GetInsightStream - Pricing">
@@ -43,7 +41,8 @@ const PAYSTACK_LINK = "https://paystack.shop/pay/getinsightstream";
                     <li>✅ 6-month data retention</li>
                     <li>✅ Priority email support</li>
                 </ul>
-                <a href={FLUTTERWAVE_LINK} target="_blank" class="block text-center w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded transition-colors">
+                <!-- FIXED: Changed FLUTTERWAVE_LINK to PAYSTACK_LINK -->
+                <a href={PAYSTACK_LINK} target="_blank" class="block text-center w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded transition-colors">
                     Upgrade to Pro
                 </a>
             </div>
