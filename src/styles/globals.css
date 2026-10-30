@@ -75,4 +75,7 @@
         --btn-px: 1.5rem;
         --btn-py: 1.125rem;
     }
+    button, a {
+    cursor: pointer !important;
+}
 }
