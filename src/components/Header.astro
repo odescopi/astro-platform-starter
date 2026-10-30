@@ -15,6 +15,7 @@
             <span class="font-bold text-xl tracking-tight text-white">GetInsightStream</span>
         </a>
         
+        <!-- Logout button (always visible for now to prevent JS bugs) -->
         <button id="logoutBtnHeader" class="text-gray-400 hover:text-white text-sm font-medium transition-colors hidden">
             Log Out
         </button>
@@ -23,15 +24,11 @@
     <!-- ROW 2: Links (Left) and Action Button (Right) -->
     <div class="flex flex-row items-center justify-between w-full gap-4 mt-2">
         
-        <!-- App Links -->
+        <!-- App Links (Always visible!) -->
         <ul class="flex flex-wrap items-center gap-x-6 gap-y-2">
             <li><a href="/pricing" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Pricing</a></li>
-            
-            <!-- Using a specific ID for direct targeting -->
-            <div id="auth-links" class="hidden items-center gap-x-6">
-                <li><a href="/install" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Install</a></li>
-                <li><a href="/explorer" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">SQL Explorer</a></li>
-            </div>
+            <li><a href="/install" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Install</a></li>
+            <li><a href="/explorer" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">SQL Explorer</a></li>
         </ul>
 
         <!-- CTA Button -->
@@ -42,35 +39,29 @@
 
 </nav>
 
-<!-- INLINE SCRIPT: Runs instantly, bypasses Astro bundling and browser cache -->
-<script is:inline>
-    (function() {
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
         const token = localStorage.getItem('cognito_id_token');
-        const authLinks = document.getElementById('auth-links');
         const cta = document.getElementById('nav-cta');
         const logoutBtn = document.getElementById('logoutBtnHeader');
-        
-        if (token) {
-            // Logged In
-            authLinks.classList.remove('hidden');
-            authLinks.classList.add('flex');
-            logoutBtn.classList.remove('hidden');
 
-            const currentPath = window.location.pathname;
-            if (currentPath === '/dashboard' || currentPath === '/dashboard/') {
+        if (token) {
+            // If logged in, show the logout button
+            logoutBtn.classList.remove('hidden');
+            
+            // Change button text based on page
+            if (window.location.pathname === '/dashboard' || window.location.pathname === '/dashboard/') {
                 cta.style.display = "none";
             } else {
                 cta.innerText = "Go to Dashboard";
             }
 
+            // Logout Logic
             logoutBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 localStorage.removeItem('cognito_id_token');
-                const COGNITO_DOMAIN = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com";
-                const COGNITO_CLIENT_ID = "267de0qkjqbuchbijhufmso1oe";
-                const logoutUrl = `${COGNITO_DOMAIN}/logout?client_id=${COGNITO_CLIENT_ID}&logout_uri=${encodeURIComponent("https://getinsightstream.com")}`;
-                window.location.href = logoutUrl;
+                window.location.href = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com/logout?client_id=267de0qkjqbuchbijhufmso1oe&logout_uri=https://getinsightstream.com";
             });
         }
-    })();
+    });
 </script>
