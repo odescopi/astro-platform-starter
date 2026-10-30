@@ -1,15 +1,12 @@
 ---
 import '../styles/globals.css';
 import '@fontsource-variable/inter/wght.css';
-import interWoff2 from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import Analytics from '../components/Analytics.astro';
 
 interface Props {
     title: string;
 }
-
 const { title } = Astro.props;
 ---
 
@@ -18,33 +15,17 @@ const { title } = Astro.props;
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <meta name="generator" content={Astro.generator} />
-        
-        <!-- Inter Font Loading -->
-        <link rel="preload" href={interWoff2} as="font" type="font/woff2" crossorigin />
-        
         <title>{title}</title>
-        
-        <!-- Netlify Analytics Component (Optional) -->
-        <Analytics />
     </head>
-    <body class="bg-gray-900 text-gray-100 font-sans antialiased selection:bg-red-500 selection:text-white">
+    <body class="bg-gray-900 text-gray-100 font-sans antialiased min-h-screen flex flex-col">
         
-        <!-- Main Container -->
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 min-h-screen flex flex-col">
-            
-            <!-- Header -->
-            <Header />
+        <Header />
 
-            <!-- Page Content Rendered Here -->
-            <main class="flex-grow pb-16">
-                <slot />
-            </main>
+        <main class="flex-grow">
+            <slot />
+        </main>
 
-            <!-- Footer -->
-            <Footer />
+        <Footer />
 
-        </div>
     </body>
 </html>
