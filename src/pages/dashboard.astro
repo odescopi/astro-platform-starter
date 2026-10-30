@@ -5,14 +5,9 @@ import Layout from '../layouts/Layout.astro';
 <Layout title="GetInsightStream - Dashboard">
     <div class="max-w-4xl mx-auto py-12 px-6">
         
-        <div class="flex justify-between items-center mb-8">
-            <div>
-                <h1 class="text-3xl font-extrabold mb-2">Dashboard</h1>
-                <p class="text-gray-400">Welcome back, <span id="userFirstName" class="text-white font-bold">User</span>!</p>
-            </div>
-            <button id="logoutBtn" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white text-sm font-bold py-2 px-4 rounded transition-colors">
-                Log Out
-            </button>
+        <div class="mb-8">
+            <h1 class="text-3xl font-extrabold mb-2">Dashboard</h1>
+            <p class="text-gray-400">Welcome back, <span id="userFirstName" class="text-white font-bold">User</span>!</p>
         </div>
 
         <div class="bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-xl max-w-xl">
@@ -72,18 +67,16 @@ import Layout from '../layouts/Layout.astro';
             }
 
             // 3. Show User Info
-            const user = parseJwt(idToken);
-            const email = user.email || "User";
-            document.getElementById('userFirstName').innerText = email.split('@')[0];
-
-            // 4. Logout Logic
-            document.getElementById('logoutBtn').addEventListener('click', () => {
+            try {
+                const user = parseJwt(idToken);
+                const email = user.email || "User";
+                document.getElementById('userFirstName').innerText = email.split('@')[0];
+            } catch (e) {
                 localStorage.removeItem('cognito_id_token');
-                const logoutUrl = `${COGNITO_DOMAIN}/logout?client_id=${COGNITO_CLIENT_ID}&logout_uri=${encodeURIComponent("https://getinsightstream.com")}`;
-                window.location.href = logoutUrl;
-            });
+                window.location.reload();
+            }
 
-            // 5. Generate Key Logic
+            // 4. Generate Key Logic
             const btn = document.getElementById('genBtn');
             const input = document.getElementById('shopName');
             const result = document.getElementById('result');
