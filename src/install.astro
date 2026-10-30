@@ -1,0 +1,53 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="GetInsightStream - Install Tracker">
+    <div class="max-w-4xl mx-auto py-12 px-6">
+        
+        <div class="mb-8">
+            <h1 class="text-3xl font-extrabold mb-2">Install the Tracker</h1>
+            <p class="text-gray-400">Add this snippet to your website to start sending real data.</p>
+        </div>
+
+        <div class="bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-xl mb-8">
+            <h2 class="text-xl font-bold mb-4 text-white">1. Enter your API Key</h2>
+            <p class="text-sm text-gray-400 mb-4">Paste the key you generated on the dashboard.</p>
+            <input type="text" id="apiKeyInput" placeholder="sk_live_..." class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-white focus:outline-none focus:border-red-400 font-mono text-sm" />
+        </div>
+
+        <div class="bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-xl">
+            <h2 class="text-xl font-bold mb-4 text-white">2. Copy this snippet</h2>
+            <p class="text-sm text-gray-400 mb-4">Paste this into the <code>&lt;head&gt;</code> of your website or Shopify theme.</p>
+            
+            <div class="relative">
+                <pre id="snippetCode" class="bg-gray-900 p-4 rounded text-green-400 font-mono text-sm overflow-x-auto whitespace-pre-wrap break-all border border-gray-700"></pre>
+                <button id="copyBtn" class="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold px-3 py-1 rounded transition-colors">Copy</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            const snippetCode = document.getElementById('snippetCode');
+            const copyBtn = document.getElementById('copyBtn');
+
+            function updateSnippet() {
+                const key = apiKeyInput.value.trim() || "YOUR_API_KEY_HERE";
+                const code = `<!-- GetInsightStream Tracker -->\n<script \n  src="https://getinsightstream.com/tracker.js" \n  data-api-key="${key}" \n  defer>\n</script>`;
+                snippetCode.textContent = code;
+            }
+
+            apiKeyInput.addEventListener('input', updateSnippet);
+            updateSnippet(); // Initial load
+
+            copyBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(snippetCode.textContent);
+                copyBtn.innerText = "Copied! ✅";
+                setTimeout(() => copyBtn.innerText = "Copy", 2000);
+            });
+        });
+    </script>
+</Layout>
