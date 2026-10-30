@@ -1,31 +1,42 @@
 ---
 import Logo from '../components/Logo.astro';
-
-const navItems = [
-    { linkText: 'Home', href: '/' },
-    { linkText: 'Dashboard', href: '/dashboard' },
-    { linkText: 'Pricing', href: '/pricing' }, 
-    { linkText: 'Install Tracker', href: '/install' }, 
-    { linkText: 'SQL Explorer', href: '/explorer' }
-];
 ---
 
-<nav class="flex flex-wrap items-center justify-between gap-4 pt-6 pb-8 sm:pt-12 sm:pb-12 border-b border-gray-800 mb-12">
+<nav class="flex flex-wrap items-center justify-between gap-4 pt-6 pb-8 sm:pt-8 sm:pb-12 border-b border-gray-800 mb-12 px-6 max-w-6xl mx-auto w-full">
     <a href="/" class="flex items-center">
         <Logo />
-        <span class="ml-2 font-bold text-xl tracking-tight">GetInsightStream</span>
+        <span class="ml-2 font-bold text-xl tracking-tight text-white">GetInsightStream</span>
     </a>
-    {
-        !!navItems?.length && (
-            <ul class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                {navItems.map((item) => (
-                    <li>
-                        <a href={item.href} class="inline-block px-3 py-2 text-gray-300 hover:text-white transition-colors">
-                            {item.linkText}
-                        </a>
-                    </li>
-                ))}
-            </ul>
-        )
-    }
+    
+    <ul class="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <li><a href="/pricing" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Pricing</a></li>
+        
+        <!-- The "App" Links (Only show these if they have a token in localStorage) -->
+        <div id="auth-links" class="hidden sm:flex items-center gap-x-6">
+            <li><a href="/dashboard" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Dashboard</a></li>
+            <li><a href="/install" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Install</a></li>
+            <li><a href="/explorer" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">SQL Explorer</a></li>
+        </div>
+        
+        <!-- The CTA / Login Button -->
+        <li>
+            <a href="/dashboard" id="nav-cta" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-5 rounded transition-colors text-sm">
+                Get Started
+            </a>
+        </li>
+    </ul>
 </nav>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const token = localStorage.getItem('cognito_id_token');
+        const authLinks = document.getElementById('auth-links');
+        const cta = document.getElementById('nav-cta');
+        
+        if (token) {
+            // Logged in: Show app links, change CTA to "Go to App"
+            authLinks.classList.remove('hidden');
+            cta.innerText = "Go to App";
+        }
+    });
+</script>
