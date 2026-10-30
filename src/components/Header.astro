@@ -15,7 +15,7 @@
             <span class="font-bold text-xl tracking-tight text-white">GetInsightStream</span>
         </a>
         
-        <button id="logoutBtnHeader" class="hidden text-gray-400 hover:text-white text-sm font-medium transition-colors">
+        <button id="logoutBtnHeader" class="text-gray-400 hover:text-white text-sm font-medium transition-colors" style="display: none;">
             Log Out
         </button>
     </div>
@@ -27,8 +27,8 @@
         <ul class="flex flex-wrap items-center gap-x-6 gap-y-2">
             <li><a href="/pricing" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Pricing</a></li>
             
-            <!-- I removed 'hidden' entirely from this div. JavaScript will control it. -->
-            <div id="auth-links" class="flex items-center gap-x-6 hidden">
+            <!-- Using inline style for the hidden state -->
+            <div id="auth-links" class="flex items-center gap-x-6" style="display: none;">
                 <li><a href="/install" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Install</a></li>
                 <li><a href="/explorer" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">SQL Explorer</a></li>
             </div>
@@ -43,31 +43,31 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", () => {
+        // Using inline style to bypass all CSS conflicts
         const token = localStorage.getItem('cognito_id_token');
         const authLinks = document.getElementById('auth-links');
         const cta = document.getElementById('nav-cta');
         const logoutBtn = document.getElementById('logoutBtnHeader');
         const currentPath = window.location.pathname;
 
-        console.log("Header Script Loaded. Token exists:", !!token);
-
         if (token) {
-            console.log("User is logged in. Revealing links.");
-            authLinks.classList.remove('hidden');
-            logoutBtn.classList.remove('hidden');
+            // Show links via inline style
+            authLinks.style.display = "flex";
+            logoutBtn.style.display = "block";
             
             if (currentPath === '/dashboard' || currentPath === '/dashboard/') {
-                cta.classList.add('hidden');
+                cta.style.display = "none";
             } else {
                 cta.innerText = "Go to Dashboard";
                 cta.href = "/dashboard";
+                cta.style.display = "block";
             }
             
             logoutBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 logoutBtn.innerText = "Logging out...";
                 logoutBtn.disabled = true;
-                logoutBtn.classList.add('opacity-50');
+                logoutBtn.style.opacity = "0.5";
 
                 localStorage.removeItem('cognito_id_token');
                 
