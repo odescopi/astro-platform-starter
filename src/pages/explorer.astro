@@ -75,10 +75,10 @@ import Layout from '../layouts/Layout.astro';
                 <span>Query Results</span>
                 <div class="flex items-center gap-4">
                     <span id="liveIndicator" class="text-green-400 hidden animate-pulse">● Live Updating...</span>
-                    <!-- Removed href and target. JS handles it now. -->
-                    <button id="downloadCsvBtn" class="hidden bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1 px-3 rounded transition-colors">
+                    <!-- THE DOWNLOAD BUTTON (Using anchor tag with download attribute) -->
+                    <a id="downloadCsvBtn" href="#" download class="hidden bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1 px-3 rounded transition-colors">
                         ⬇ Download CSV
-                    </button>
+                    </a>
                 </div>
             </div>
             <div class="overflow-x-auto">
@@ -170,7 +170,7 @@ import Layout from '../layouts/Layout.astro';
                 errorText.innerText = "";
                 resultsContainer.classList.add('hidden');
                 noData.classList.add('hidden');
-                downloadCsvBtn.classList.add('hidden'); // Hide button on new query
+                downloadCsvBtn.classList.add('hidden'); 
                 statusText.classList.remove('hidden');
                 runBtn.disabled = true;
 
@@ -216,12 +216,17 @@ import Layout from '../layouts/Layout.astro';
                     return;
                 }
 
-                // Show Download Button & Setup Seamless Download
+                // Setup Seamless Download
                 if (csvUrl) {
                     downloadCsvBtn.classList.remove('hidden');
                     
+                    // Set the href and download attribute for native fallback
+                    downloadCsvBtn.href = csvUrl;
+                    downloadCsvBtn.setAttribute('download', `getinsightstream-export-${Date.now()}.csv`);
+
+                    // Add JS fetch logic for a smoother experience
                     downloadCsvBtn.onclick = async (e) => {
-                        e.preventDefault();
+                        e.preventDefault(); // Stop native navigation
                         const originalText = downloadCsvBtn.innerText;
                         downloadCsvBtn.innerText = "Downloading...";
                         
@@ -233,15 +238,16 @@ import Layout from '../layouts/Layout.astro';
                             const a = document.createElement('a');
                             a.style.display = 'none';
                             a.href = url;
-                            a.download = `getinsightstream-export-${Date.now()}.csv`; // Clean filename
+                            a.download = `getinsightstream-export-${Date.now()}.csv`;
                             document.body.appendChild(a);
                             a.click();
                             
                             window.URL.revokeObjectURL(url);
                             downloadCsvBtn.innerText = "✅ Downloaded!";
                         } catch (err) {
-                            console.error("Download failed", err);
-                            downloadCsvBtn.innerText = "❌ Failed";
+                            console.error("Fetch failed, relying on native download", err);
+                            // If fetch fails (e.g., CORS), just let the browser handle the default anchor behavior
+                            window.location.href = csvUrl;
                         } finally {
                             setTimeout(() => {
                                 downloadCsvBtn.innerText = originalText;
