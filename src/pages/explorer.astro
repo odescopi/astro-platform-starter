@@ -71,14 +71,14 @@ import Layout from '../layouts/Layout.astro';
         </div>
 
         <div id="resultsContainer" class="bg-gray-800 rounded-lg border border-gray-700 shadow-xl overflow-hidden hidden">
-            <!-- UPDATED HEADER WITH DOWNLOAD BUTTON -->
             <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 text-sm font-mono text-gray-400 flex justify-between items-center">
                 <span>Query Results</span>
                 <div class="flex items-center gap-4">
                     <span id="liveIndicator" class="text-green-400 hidden animate-pulse">● Live Updating...</span>
-                    <a id="downloadCsvBtn" href="#" target="_blank" class="hidden bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1 px-3 rounded transition-colors">
+                    <!-- Removed href and target. JS handles it now. -->
+                    <button id="downloadCsvBtn" class="hidden bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1 px-3 rounded transition-colors">
                         ⬇ Download CSV
-                    </a>
+                    </button>
                 </div>
             </div>
             <div class="overflow-x-auto">
@@ -216,10 +216,38 @@ import Layout from '../layouts/Layout.astro';
                     return;
                 }
 
-                // Show Download Button if URL exists
+                // Show Download Button & Setup Seamless Download
                 if (csvUrl) {
-                    downloadCsvBtn.href = csvUrl;
                     downloadCsvBtn.classList.remove('hidden');
+                    
+                    downloadCsvBtn.onclick = async (e) => {
+                        e.preventDefault();
+                        const originalText = downloadCsvBtn.innerText;
+                        downloadCsvBtn.innerText = "Downloading...";
+                        
+                        try {
+                            const response = await fetch(csvUrl);
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = url;
+                            a.download = `getinsightstream-export-${Date.now()}.csv`; // Clean filename
+                            document.body.appendChild(a);
+                            a.click();
+                            
+                            window.URL.revokeObjectURL(url);
+                            downloadCsvBtn.innerText = "✅ Downloaded!";
+                        } catch (err) {
+                            console.error("Download failed", err);
+                            downloadCsvBtn.innerText = "❌ Failed";
+                        } finally {
+                            setTimeout(() => {
+                                downloadCsvBtn.innerText = originalText;
+                            }, 3000);
+                        }
+                    };
                 }
 
                 const trHead = document.createElement('tr');
