@@ -76,9 +76,9 @@ import Layout from '../layouts/Layout.astro';
                 <div class="flex items-center gap-4">
                     <span id="liveIndicator" class="text-green-400 hidden animate-pulse">● Live Updating...</span>
                     <!-- THE DOWNLOAD BUTTON -->
-                    <a id="downloadCsvBtn" href="#" class="hidden bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1 px-3 rounded transition-colors">
+                    <button id="downloadCsvBtn" class="hidden bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1 px-3 rounded transition-colors">
                         ⬇ Download CSV
-                    </a>
+                    </button>
                 </div>
             </div>
             <div class="overflow-x-auto">
@@ -216,11 +216,46 @@ import Layout from '../layouts/Layout.astro';
                     return;
                 }
 
-                // The URL is now a secure, pre-signed HTTPS link that forces a download!
+                // The URL is now a secure, pre-signed HTTPS link
                 if (csvUrl) {
                     downloadCsvBtn.classList.remove('hidden');
-                    downloadCsvBtn.href = csvUrl;
-                    // We don't even need a fetch() block anymore, the browser knows what to do.
+                    
+                    downloadCsvBtn.onclick = async (e) => {
+                        e.preventDefault(); // Stop native navigation
+                        const originalText = downloadCsvBtn.innerText;
+                        downloadCsvBtn.innerText = "Downloading...";
+                        downloadCsvBtn.disabled = true;
+                        
+                        try {
+                            // Fetch the file as a blob
+                            const response = await fetch(csvUrl);
+                            if (!response.ok) throw new Error("Network response was not ok");
+                            
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            
+                            // Create a temporary link to force the download
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = url;
+                            a.download = `getinsightstream-export-${Date.now()}.csv`;
+                            document.body.appendChild(a);
+                            a.click();
+                            
+                            // Cleanup
+                            window.URL.revokeObjectURL(url);
+                            downloadCsvBtn.innerText = "✅ Downloaded!";
+                            
+                        } catch (err) {
+                            console.error("Fetch failed", err);
+                            downloadCsvBtn.innerText = "❌ Failed";
+                        } finally {
+                            setTimeout(() => {
+                                downloadCsvBtn.innerText = originalText;
+                                downloadCsvBtn.disabled = false;
+                            }, 3000);
+                        }
+                    };
                 }
 
                 const trHead = document.createElement('tr');
