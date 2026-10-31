@@ -4,12 +4,15 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout title="GetInsightStream - Dashboard">
     
-    <!-- 🛠️ THE ZERO-FLASH FIX -->
+    <!-- 🛠️ THE ZERO-FLASH FIX & SMOOTH TRANSITION -->
     <script is:inline>
         (function() {
             const COGNITO_DOMAIN = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com";
             const COGNITO_CLIENT_ID = "267de0qkjqbuchbijhufmso1oe";
             const REDIRECT_URI = "https://getinsightstream.com/dashboard";
+
+            // 🛠️ Paint the screen dark slate immediately to prevent white/grey flash
+            document.documentElement.style.backgroundColor = '#0f172a';
 
             // 1. Check for Token in URL hash
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -24,7 +27,7 @@ import Layout from '../layouts/Layout.astro';
 
             // 2. If no token, hide the body and redirect INSTANTLY
             if (!idToken) {
-                document.documentElement.style.visibility = 'hidden'; // Hide the whole HTML immediately
+                document.documentElement.style.visibility = 'hidden';
                 const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_CLIENT_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
                 window.location.href = loginUrl;
             } else {
@@ -78,7 +81,7 @@ import Layout from '../layouts/Layout.astro';
 
         document.addEventListener("DOMContentLoaded", () => {
             const idToken = localStorage.getItem('cognito_id_token');
-            if (!idToken) return; // If they somehow get here without a token, do nothing.
+            if (!idToken) return; 
 
             // Reveal the dashboard container
             document.getElementById('app-container').style.display = 'block';
