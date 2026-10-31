@@ -10,19 +10,64 @@ import Layout from '../layouts/Layout.astro';
             <p class="text-gray-400">Add this snippet to your website to start sending real data.</p>
         </div>
 
+        <!-- Step 1: API Key -->
         <div class="bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-xl mb-8">
             <h2 class="text-xl font-bold mb-4 text-white">1. Enter your API Key</h2>
             <p class="text-sm text-gray-400 mb-4">Paste the key you generated on the dashboard.</p>
             <input type="text" id="apiKeyInput" placeholder="sk_live_..." class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-white focus:outline-none focus:border-red-400 font-mono text-sm" />
         </div>
 
-        <div class="bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-xl">
+        <!-- Step 2: Snippet -->
+        <div class="bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-xl mb-8">
             <h2 class="text-xl font-bold mb-4 text-white">2. Copy this snippet</h2>
             <p class="text-sm text-gray-400 mb-4">Paste this into the <code>&lt;head&gt;</code> of your website or Shopify theme.</p>
             
             <div class="relative">
                 <pre id="snippetCode" class="bg-gray-900 p-4 rounded text-green-400 font-mono text-sm overflow-x-auto whitespace-pre-wrap break-all border border-gray-700"></pre>
                 <button id="copyBtn" class="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold px-3 py-1 rounded transition-colors">Copy</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Visual Guide -->
+        <div class="bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-xl">
+            <h2 class="text-xl font-bold mb-6 text-white">3. Where do I paste this?</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Shopify -->
+                <div class="bg-gray-900 p-5 rounded-lg border border-gray-700">
+                    <h3 class="font-bold text-red-400 mb-2">Shopify</h3>
+                    <p class="text-sm text-gray-400">Go to <strong>Online Store</strong> → <strong>Themes</strong> → <strong>Edit Code</strong> → <strong>theme.liquid</strong> and paste the snippet right before the closing <code>&lt;/head&gt;</code> tag.</p>
+                </div>
+                
+                <!-- WordPress -->
+                <div class="bg-gray-900 p-5 rounded-lg border border-gray-700">
+                    <h3 class="font-bold text-red-400 mb-2">WordPress / WooCommerce</h3>
+                    <p class="text-sm text-gray-400">Use a free plugin like <strong>"Insert Headers and Footers"</strong> and paste the snippet into the "Scripts in Header" box.</p>
+                </div>
+                
+                <!-- Wix -->
+                <div class="bg-gray-900 p-5 rounded-lg border border-gray-700">
+                    <h3 class="font-bold text-red-400 mb-2">Wix</h3>
+                    <p class="text-sm text-gray-400">Go to <strong>Settings</strong> → <strong>Custom Code</strong> → <strong>Add Custom Code</strong>. Paste the snippet, set it to load on "All Pages", and apply.</p>
+                </div>
+
+                <!-- Squarespace -->
+                <div class="bg-gray-900 p-5 rounded-lg border border-gray-700">
+                    <h3 class="font-bold text-red-400 mb-2">Squarespace</h3>
+                    <p class="text-sm text-gray-400">Go to <strong>Settings</strong> → <strong>Advanced</strong> → <strong>Code Injection</strong> → <strong>Header</strong>. Paste the snippet and save.</p>
+                </div>
+                
+                <!-- React -->
+                <div class="bg-gray-900 p-5 rounded-lg border border-gray-700">
+                    <h3 class="font-bold text-red-400 mb-2">React / Next.js</h3>
+                    <p class="text-sm text-gray-400">Paste the snippet inside the <code>&lt;head&gt;</code> tag in your <code>_document.js</code> or <code>layout.tsx</code> file.</p>
+                </div>
+                
+                <!-- Custom HTML -->
+                <div class="bg-gray-900 p-5 rounded-lg border border-gray-700">
+                    <h3 class="font-bold text-red-400 mb-2">Custom HTML</h3>
+                    <p class="text-sm text-gray-400">Paste the snippet anywhere inside the <code>&lt;head&gt;</code> tag of your main HTML template.</p>
+                </div>
             </div>
         </div>
 
@@ -37,20 +82,19 @@ import Layout from '../layouts/Layout.astro';
             function updateSnippet() {
                 const key = apiKeyInput.value.trim() || "YOUR_API_KEY_HERE";
                 
-                const parts = [
-                    "<!-- GetInsightStream Tracker -->",
-                    "<script",
-                    '  src="https://getinsightstream.com/tracker.js"',
-                    '  data-api-key="' + key + '"',
-                    "  defer>",
-                    "<" + "/script>"
-                ];
+                // Using string concatenation to avoid Astro compiler issues with backslashes
+                let code = "<!-- GetInsightStream Tracker -->\n";
+                code += "<script\n";
+                code += "  src=\"https://getinsightstream.com/tracker.js\"\n";
+                code += "  data-api-key=\"" + key + "\"\n";
+                code += "  defer>\n";
+                code += "</script>";
                 
-                snippetCode.textContent = parts.join("\n");
+                snippetCode.textContent = code;
             }
 
             apiKeyInput.addEventListener('input', updateSnippet);
-            updateSnippet(); 
+            updateSnippet(); // Initial load
 
             copyBtn.addEventListener('click', () => {
                 navigator.clipboard.writeText(snippetCode.textContent);
@@ -58,19 +102,5 @@ import Layout from '../layouts/Layout.astro';
                 setTimeout(() => copyBtn.innerText = "Copy", 2000);
             });
         });
-    </script>
-        <script is:inline>
-        // 1. Hide the body immediately to prevent flashing
-        document.documentElement.style.visibility = 'hidden';
-
-        if (!localStorage.getItem('cognito_id_token')) {
-            const COGNITO_DOMAIN = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com";
-            const COGNITO_CLIENT_ID = "267de0qkjqbuchbijhufmso1oe";
-            const REDIRECT_URI = "https://getinsightstream.com/install";
-            window.location.href = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_CLIENT_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
-        } else {
-            // 2. If they are logged in, show the page
-            document.documentElement.style.visibility = 'visible';
-        }
     </script>
 </Layout>
