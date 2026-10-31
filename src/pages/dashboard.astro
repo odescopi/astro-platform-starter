@@ -1,7 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
 
-// 🛠️ Read environment variables from Netlify
 const API_URL = import.meta.env.PUBLIC_API_URL;
 const COGNITO_ID = import.meta.env.PUBLIC_COGNITO_CLIENT_ID;
 const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
@@ -10,8 +9,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 <Layout title="GetInsightStream - Dashboard">
     
     <!-- 🛠️ ZERO-FLASH & AUTO-LOGIN FIX -->
-    <!-- We pass the variables into the inline script using define:vars -->
-    <script is:inline define:vars={{ API_URL, COGNITO_ID, COGNITO_DOMAIN }}>
+    <script is:inline define:vars={{ COGNITO_ID, COGNITO_DOMAIN }}>
         (function() {
             const REDIRECT_URI = "https://getinsightstream.com/dashboard";
 
@@ -81,12 +79,17 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
         </div>
 
         <!-- Step 2: Existing Keys Table -->
-        <div class="mb-6">
-            <h2 class="text-2xl font-bold text-white mb-2">Your API Keys</h2>
-            <p class="text-sm text-gray-400">All the keys you have generated. The API key is your permanent credential, so keep it safe.</p>
+        <div class="mb-6 flex justify-between items-end">
+            <div>
+                <h2 class="text-2xl font-bold text-white mb-2">Your API Keys</h2>
+                <p class="text-sm text-gray-400">All the keys you have generated. The API key is your permanent credential, so keep it safe.</p>
+            </div>
+            <button id="toggleTableBtn" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm px-4 py-2 rounded-lg border border-gray-700 transition-colors">
+                Hide Keys
+            </button>
         </div>
 
-        <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
+        <div id="tableContainer" class="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden transition-all duration-300">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-gray-300">
                     <thead class="text-xs uppercase bg-gray-900 text-gray-400 border-b border-gray-700">
@@ -94,6 +97,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                             <th class="px-6 py-4 font-semibold">Shop Domain</th>
                             <th class="px-6 py-4 font-semibold">API Key</th>
                             <th class="px-6 py-4 font-semibold">Plan</th>
+                            <th class="px-6 py-4 font-semibold text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="keysTableBody">
@@ -110,9 +114,47 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
         </div>
     </div>
 
-    <!-- Pass API_URL to the main script -->
+    <!-- 🛠️ WARNING MODAL (Hidden by default) -->
+    <div id="warningModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden transition-opacity duration-200">
+        <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl transform transition-transform duration-200 scale-100">
+            <div class="flex items-start gap-4">
+                <div class="bg-red-500/20 text-red-500 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-2">Revoke API Key?</h3>
+                    <p class="text-sm text-gray-400 mb-6">Are you sure you want to revoke this API key? Any applications, websites, or scripts using this key will immediately lose access to the GetInsightStream API. <strong class="text-red-400">This action cannot be undone.</strong></p>
+                    <div class="flex justify-end gap-3">
+                        <button id="cancelRevokeBtn" class="px-4 py-2 rounded-lg text-sm font-bold text-gray-300 bg-gray-700 hover:bg-gray-600 transition-colors">Cancel</button>
+                        <button id="confirmRevokeBtn" class="px-4 py-2 rounded-lg text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors">Yes, Revoke Key</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script is:inline define:vars={{ API_URL }}>
         const API_ENDPOINT = `${API_URL}/v1/auth/generate`;
+        let keyToRevoke = null;
+
+        // 🛠️ GLOBAL COPY FUNCTION
+        window.copyToClipboard = function(elementId, btn) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = "✅";
+                setTimeout(() => btn.innerText = originalText, 2000);
+            });
+        };
+
+        // 🛠️ OPEN MODAL FUNCTION
+        window.openRevokeModal = function(apiKey) {
+            keyToRevoke = apiKey;
+            const modal = document.getElementById('warningModal');
+            modal.classList.remove('hidden');
+            // Small delay to allow display:block to apply before opacity transition
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        };
 
         function parseJwt(token) {
             var base64Url = token.split('.')[1];
@@ -147,6 +189,72 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             const errorBox = document.getElementById('error-box');
             const apiKeyDisplay = document.getElementById('apiKeyDisplay');
             const copyBtn = document.getElementById('copyBtn');
+            const toggleTableBtn = document.getElementById('toggleTableBtn');
+            const tableContainer = document.getElementById('tableContainer');
+
+            // Modal Elements
+            const warningModal = document.getElementById('warningModal');
+            const cancelRevokeBtn = document.getElementById('cancelRevokeBtn');
+            const confirmRevokeBtn = document.getElementById('confirmRevokeBtn');
+
+            // Modal Logic
+            cancelRevokeBtn.addEventListener('click', () => {
+                warningModal.classList.add('hidden');
+                keyToRevoke = null;
+            });
+
+            confirmRevokeBtn.addEventListener('click', async () => {
+                if (!keyToRevoke) return;
+                
+                confirmRevokeBtn.innerText = "Revoking...";
+                confirmRevokeBtn.disabled = true;
+                cancelRevokeBtn.disabled = true;
+
+                try {
+                    const response = await fetch(API_ENDPOINT, {
+                        method: 'DELETE',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${idToken}`
+                        },
+                        body: JSON.stringify({ api_key: keyToRevoke })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        window.location.reload(); 
+                    } else {
+                        alert("Failed to delete key: " + data.error);
+                    }
+                } catch (e) {
+                    alert("Network error. Please try again.");
+                } finally {
+                    confirmRevokeBtn.innerText = "Yes, Revoke Key";
+                    confirmRevokeBtn.disabled = false;
+                    cancelRevokeBtn.disabled = false;
+                    warningModal.classList.add('hidden');
+                    keyToRevoke = null;
+                }
+            });
+
+            // Collapsible Logic
+            let isTableVisible = true;
+            toggleTableBtn.addEventListener('click', () => {
+                isTableVisible = !isTableVisible;
+                if (isTableVisible) {
+                    tableContainer.style.maxHeight = '2000px';
+                    tableContainer.style.opacity = '1';
+                    toggleTableBtn.innerText = "Hide Keys";
+                } else {
+                    tableContainer.style.maxHeight = '0px';
+                    tableContainer.style.opacity = '0';
+                    toggleTableBtn.innerText = "Show Keys";
+                }
+            });
+            
+            tableContainer.style.maxHeight = '2000px';
+            tableContainer.style.opacity = '1';
 
             // FETCH EXISTING KEYS
             async function loadKeys() {
@@ -164,16 +272,28 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     
                     if (data.success && data.keys.length > 0) {
                         noKeys.classList.add('hidden');
-                        data.keys.forEach(key => {
+                        data.keys.forEach((key, index) => {
                             const tr = document.createElement('tr');
                             tr.className = "border-b border-gray-700 hover:bg-gray-750";
                             tr.innerHTML = `
                                 <td class="px-6 py-4 text-white font-medium">${key.shop_domain}</td>
-                                <td class="px-6 py-4 font-mono text-green-400 text-xs">${key.api_key}</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <span id="key-${index}" class="font-mono text-green-400 text-xs break-all">${key.api_key}</span>
+                                        <button onclick="copyToClipboard('key-${index}', this)" class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-1 px-2 rounded transition-colors flex-shrink-0" title="Copy Key">
+                                            Copy
+                                        </button>
+                                    </div>
+                                </td>
                                 <td class="px-6 py-4">
                                     <span class="px-2 py-1 rounded text-xs font-bold uppercase tracking-wide ${key.plan === 'pro' ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-300'}">
                                         ${key.plan}
                                     </span>
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <button onclick="openRevokeModal('${key.api_key}')" class="bg-red-900/50 hover:bg-red-800 text-red-300 text-xs font-bold py-1 px-2 rounded transition-colors flex-shrink-0 ml-auto" title="Revoke Key">
+                                        Revoke
+                                    </button>
                                 </td>
                             `;
                             keysTableBody.appendChild(tr);
@@ -183,7 +303,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     }
                 } catch (e) {
                     console.error("Failed to load keys", e);
-                    keysTableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-red-400 text-center">Failed to load keys. Please refresh.</td></tr>`;
+                    keysTableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-red-400 text-center">Failed to load keys. Please refresh.</td></tr>`;
                 }
             }
 
@@ -221,7 +341,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         apiKeyDisplay.innerText = data.api_key;
                         input.value = ""; 
                         
-                        // Wait 500ms then refresh table
                         setTimeout(() => loadKeys(), 500); 
                     } else {
                         throw new Error(data.error || "Failed to generate key.");
