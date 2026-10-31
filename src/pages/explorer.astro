@@ -216,25 +216,22 @@ import Layout from '../layouts/Layout.astro';
                     return;
                 }
 
-                // The URL is now a secure, pre-signed HTTPS link
                 if (csvUrl) {
                     downloadCsvBtn.classList.remove('hidden');
                     
                     downloadCsvBtn.onclick = async (e) => {
-                        e.preventDefault(); // Stop native navigation
+                        e.preventDefault();
                         const originalText = downloadCsvBtn.innerText;
                         downloadCsvBtn.innerText = "Downloading...";
                         downloadCsvBtn.disabled = true;
                         
                         try {
-                            // Fetch the file as a blob
                             const response = await fetch(csvUrl);
                             if (!response.ok) throw new Error("Network response was not ok");
                             
                             const blob = await response.blob();
                             const url = window.URL.createObjectURL(blob);
                             
-                            // Create a temporary link to force the download
                             const a = document.createElement('a');
                             a.style.display = 'none';
                             a.href = url;
@@ -242,7 +239,6 @@ import Layout from '../layouts/Layout.astro';
                             document.body.appendChild(a);
                             a.click();
                             
-                            // Cleanup
                             window.URL.revokeObjectURL(url);
                             downloadCsvBtn.innerText = "✅ Downloaded!";
                             
