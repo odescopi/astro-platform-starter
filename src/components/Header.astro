@@ -1,5 +1,7 @@
 ---
 // No imports needed
+const COGNITO_ID = import.meta.env.PUBLIC_COGNITO_CLIENT_ID;
+const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 ---
 
 <nav class="flex flex-col gap-4 pt-6 pb-6 border-b border-gray-800 mb-12 px-6 max-w-6xl mx-auto w-full">
@@ -7,17 +9,14 @@
     <!-- ROW 1: Logo (Left) and Logout (Right) -->
     <div class="flex items-center justify-between w-full">
         <a href="/" class="flex items-center">
-            <!-- Increased from 28 to 36 -->
             <svg width="36" height="36" viewBox="0 0 100 100" class="mr-3">
                 <rect width="100" height="100" rx="20" fill="#ef4444" />
                 <path d="M30 50 C 30 30, 70 30, 70 50 C 70 70, 30 70, 30 50" stroke="white" stroke-width="10" fill="none" />
                 <circle cx="50" cy="50" r="10" fill="white" />
             </svg>
-            <!-- Increased text size to 2xl for better balance -->
             <span class="font-bold text-2xl tracking-tight text-white">GetInsightStream</span>
         </a>
         
-        <!-- Logout button (always visible for now to prevent JS bugs) -->
         <button id="logoutBtnHeader" class="text-gray-400 hover:text-white text-sm font-medium transition-colors hidden">
             Log Out
         </button>
@@ -26,15 +25,12 @@
     <!-- ROW 2: Links (Left) and Action Button (Right) -->
     <div class="flex flex-col sm:flex-row items-center justify-between w-full gap-4 mt-2">
         
-        <!-- App Links (Always visible!) -->
         <ul class="flex flex-wrap items-center gap-x-6 gap-y-2">
             <li><a href="/pricing" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Pricing</a></li>
             <li><a href="/install" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Install</a></li>
-            <!-- 🛠️ CACHE BUSTER ADDED HERE -->
             <li><a href="/explorer?v=2" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">SQL Explorer</a></li>
         </ul>
 
-        <!-- CTA Button -->
         <a href="/dashboard" id="nav-cta" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-5 rounded transition-colors text-sm whitespace-nowrap">
             Get Started
         </a>
@@ -42,28 +38,27 @@
 
 </nav>
 
-<script>
+<script is:inline define:vars={{ COGNITO_ID, COGNITO_DOMAIN }}>
     document.addEventListener("DOMContentLoaded", () => {
         const token = localStorage.getItem('cognito_id_token');
         const cta = document.getElementById('nav-cta');
         const logoutBtn = document.getElementById('logoutBtnHeader');
 
         if (token) {
-            // If logged in, show the logout button
             logoutBtn.classList.remove('hidden');
             
-            // Change button text based on page
             if (window.location.pathname === '/dashboard' || window.location.pathname === '/dashboard/') {
                 cta.style.display = "none";
             } else {
                 cta.innerText = "Go to Dashboard";
             }
 
-            // Logout Logic
             logoutBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 localStorage.removeItem('cognito_id_token');
-                window.location.href = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com/logout?client_id=267de0qkjqbuchbijhufmso1oe&logout_uri=https://getinsightstream.com";
+                // 🛠️ THE FIX: Using the dynamic environment variables
+                const logoutUrl = `${COGNITO_DOMAIN}/logout?client_id=${COGNITO_ID}&logout_uri=https://getinsightstream.com`;
+                window.location.href = logoutUrl;
             });
         }
     });
