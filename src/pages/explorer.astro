@@ -76,7 +76,7 @@ import Layout from '../layouts/Layout.astro';
                 <div class="flex items-center gap-4">
                     <span id="liveIndicator" class="text-green-400 hidden animate-pulse">● Live Updating...</span>
                     <!-- THE DOWNLOAD BUTTON -->
-                    <a id="downloadCsvBtn" href="#" download class="hidden bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1 px-3 rounded transition-colors">
+                    <a id="downloadCsvBtn" href="#" class="hidden bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1 px-3 rounded transition-colors">
                         ⬇ Download CSV
                     </a>
                 </div>
@@ -216,51 +216,11 @@ import Layout from '../layouts/Layout.astro';
                     return;
                 }
 
-                // Setup Seamless Download
+                // The URL is now a secure, pre-signed HTTPS link that forces a download!
                 if (csvUrl) {
                     downloadCsvBtn.classList.remove('hidden');
-                    
-                    // 🛠️ FIX: Convert s3:// to https://
-                    const s3Path = csvUrl.replace("s3://", "");
-                    const firstSlash = s3Path.indexOf("/");
-                    const bucketName = s3Path.substring(0, firstSlash);
-                    const fileKey = s3Path.substring(firstSlash + 1);
-                    const httpsUrl = `https://${bucketName}.s3.amazonaws.com/${fileKey}`;
-
-                    // Set the href and download attribute for native fallback
-                    downloadCsvBtn.href = httpsUrl;
-                    downloadCsvBtn.setAttribute('download', `getinsightstream-export-${Date.now()}.csv`);
-
-                    // Add JS fetch logic for a smoother experience
-                    downloadCsvBtn.onclick = async (e) => {
-                        e.preventDefault(); // Stop native navigation
-                        const originalText = downloadCsvBtn.innerText;
-                        downloadCsvBtn.innerText = "Downloading...";
-                        
-                        try {
-                            const response = await fetch(httpsUrl); 
-                            const blob = await response.blob();
-                            const url = window.URL.createObjectURL(blob);
-                            
-                            const a = document.createElement('a');
-                            a.style.display = 'none';
-                            a.href = url;
-                            a.download = `getinsightstream-export-${Date.now()}.csv`;
-                            document.body.appendChild(a);
-                            a.click();
-                            
-                            window.URL.revokeObjectURL(url);
-                            downloadCsvBtn.innerText = "✅ Downloaded!";
-                        } catch (err) {
-                            console.error("Fetch failed, relying on native download", err);
-                            // If fetch fails, use the fallback HTTPS link
-                            window.location.href = httpsUrl; 
-                        } finally {
-                            setTimeout(() => {
-                                downloadCsvBtn.innerText = originalText;
-                            }, 3000);
-                        }
-                    };
+                    downloadCsvBtn.href = csvUrl;
+                    // We don't even need a fetch() block anymore, the browser knows what to do.
                 }
 
                 const trHead = document.createElement('tr');
