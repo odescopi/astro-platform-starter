@@ -75,7 +75,7 @@ import Layout from '../layouts/Layout.astro';
                 <span>Query Results</span>
                 <div class="flex items-center gap-4">
                     <span id="liveIndicator" class="text-green-400 hidden animate-pulse">● Live Updating...</span>
-                    <!-- THE DOWNLOAD BUTTON (Using anchor tag with download attribute) -->
+                    <!-- THE DOWNLOAD BUTTON -->
                     <a id="downloadCsvBtn" href="#" download class="hidden bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1 px-3 rounded transition-colors">
                         ⬇ Download CSV
                     </a>
@@ -220,8 +220,15 @@ import Layout from '../layouts/Layout.astro';
                 if (csvUrl) {
                     downloadCsvBtn.classList.remove('hidden');
                     
+                    // 🛠️ FIX: Convert s3:// to https://
+                    const s3Path = csvUrl.replace("s3://", "");
+                    const firstSlash = s3Path.indexOf("/");
+                    const bucketName = s3Path.substring(0, firstSlash);
+                    const fileKey = s3Path.substring(firstSlash + 1);
+                    const httpsUrl = `https://${bucketName}.s3.amazonaws.com/${fileKey}`;
+
                     // Set the href and download attribute for native fallback
-                    downloadCsvBtn.href = csvUrl;
+                    downloadCsvBtn.href = httpsUrl;
                     downloadCsvBtn.setAttribute('download', `getinsightstream-export-${Date.now()}.csv`);
 
                     // Add JS fetch logic for a smoother experience
@@ -231,7 +238,7 @@ import Layout from '../layouts/Layout.astro';
                         downloadCsvBtn.innerText = "Downloading...";
                         
                         try {
-                            const response = await fetch(csvUrl);
+                            const response = await fetch(httpsUrl); 
                             const blob = await response.blob();
                             const url = window.URL.createObjectURL(blob);
                             
@@ -246,8 +253,8 @@ import Layout from '../layouts/Layout.astro';
                             downloadCsvBtn.innerText = "✅ Downloaded!";
                         } catch (err) {
                             console.error("Fetch failed, relying on native download", err);
-                            // If fetch fails (e.g., CORS), just let the browser handle the default anchor behavior
-                            window.location.href = csvUrl;
+                            // If fetch fails, use the fallback HTTPS link
+                            window.location.href = httpsUrl; 
                         } finally {
                             setTimeout(() => {
                                 downloadCsvBtn.innerText = originalText;
