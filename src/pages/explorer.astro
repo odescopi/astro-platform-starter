@@ -205,4 +205,14 @@ import Layout from '../layouts/Layout.astro';
             }
         });
     </script>
+        <script is:inline>
+        // Protect this page: Redirect to login if no token exists
+        if (!localStorage.getItem('cognito_id_token')) {
+            const COGNITO_DOMAIN = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com";
+            const COGNITO_CLIENT_ID = "267de0qkjqbuchbijhufmso1oe";
+            // Redirect back to explorer page after login
+            const REDIRECT_URI = "https://getinsightstream.com/explorer";
+            window.location.href = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_CLIENT_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+        }
+    </script>
 </Layout>
