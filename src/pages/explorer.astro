@@ -4,7 +4,7 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout title="GetInsightStream - SQL Explorer">
     
-    <!-- 🛠️ THE ZERO-FLASH FIX: Hide the body until we check for the token -->
+    <!-- 🛠️ THE ZERO-FLASH FIX -->
     <script is:inline>
         (function() {
             const COGNITO_DOMAIN = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com";
@@ -22,11 +22,11 @@ import Layout from '../layouts/Layout.astro';
             }
 
             if (!idToken) {
-                document.documentElement.style.visibility = 'hidden'; // Hide immediately
+                document.documentElement.style.visibility = 'hidden';
                 const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_CLIENT_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
                 window.location.href = loginUrl;
             } else {
-                document.documentElement.style.visibility = 'visible'; // Show if logged in
+                document.documentElement.style.visibility = 'visible';
             }
         })();
     </script>
@@ -71,9 +71,15 @@ import Layout from '../layouts/Layout.astro';
         </div>
 
         <div id="resultsContainer" class="bg-gray-800 rounded-lg border border-gray-700 shadow-xl overflow-hidden hidden">
-            <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 text-sm font-mono text-gray-400 flex justify-between">
+            <!-- UPDATED HEADER WITH DOWNLOAD BUTTON -->
+            <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 text-sm font-mono text-gray-400 flex justify-between items-center">
                 <span>Query Results</span>
-                <span id="liveIndicator" class="text-green-400 hidden animate-pulse">● Live Updating...</span>
+                <div class="flex items-center gap-4">
+                    <span id="liveIndicator" class="text-green-400 hidden animate-pulse">● Live Updating...</span>
+                    <a id="downloadCsvBtn" href="#" target="_blank" class="hidden bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1 px-3 rounded transition-colors">
+                        ⬇ Download CSV
+                    </a>
+                </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-gray-300">
@@ -86,7 +92,7 @@ import Layout from '../layouts/Layout.astro';
 
     </div>
 
-    <script>
+    <script is:inline>
         const INGEST_ENDPOINT = "https://9q2w68wtrl.execute-api.us-east-1.amazonaws.com/v1/events";
         const QUERY_ENDPOINT = "https://9q2w68wtrl.execute-api.us-east-1.amazonaws.com/v1/query";
 
@@ -102,6 +108,7 @@ import Layout from '../layouts/Layout.astro';
             const tableBody = document.getElementById('tableBody');
             const noData = document.getElementById('noData');
             const liveIndicator = document.getElementById('liveIndicator');
+            const downloadCsvBtn = document.getElementById('downloadCsvBtn');
 
             const today = new Date();
             const yyyy = today.getFullYear();
@@ -163,6 +170,7 @@ import Layout from '../layouts/Layout.astro';
                 errorText.innerText = "";
                 resultsContainer.classList.add('hidden');
                 noData.classList.add('hidden');
+                downloadCsvBtn.classList.add('hidden'); // Hide button on new query
                 statusText.classList.remove('hidden');
                 runBtn.disabled = true;
 
@@ -188,7 +196,7 @@ import Layout from '../layouts/Layout.astro';
                         if (data.error) throw new Error(data.error);
                     }
 
-                    if (data.success) renderTable(data.columns, data.data);
+                    if (data.success) renderTable(data.columns, data.data, data.csv_url);
 
                 } catch (err) {
                     errorText.innerText = "Error: " + err.message;
@@ -198,7 +206,7 @@ import Layout from '../layouts/Layout.astro';
                 }
             });
 
-            function renderTable(columns, rows) {
+            function renderTable(columns, rows, csvUrl) {
                 tableHead.innerHTML = "";
                 tableBody.innerHTML = "";
                 
@@ -206,6 +214,12 @@ import Layout from '../layouts/Layout.astro';
                     resultsContainer.classList.remove('hidden');
                     noData.classList.remove('hidden');
                     return;
+                }
+
+                // Show Download Button if URL exists
+                if (csvUrl) {
+                    downloadCsvBtn.href = csvUrl;
+                    downloadCsvBtn.classList.remove('hidden');
                 }
 
                 const trHead = document.createElement('tr');
