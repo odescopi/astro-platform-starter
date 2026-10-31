@@ -4,17 +4,15 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout title="GetInsightStream - Dashboard">
     
-    <!-- 🛠️ THE ZERO-FLASH FIX & SMOOTH TRANSITION -->
+    <!-- 🛠️ ZERO-FLASH & AUTO-LOGIN FIX -->
     <script is:inline>
         (function() {
             const COGNITO_DOMAIN = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com";
             const COGNITO_CLIENT_ID = "267de0qkjqbuchbijhufmso1oe";
             const REDIRECT_URI = "https://getinsightstream.com/dashboard";
 
-            // 🛠️ Paint the screen dark slate immediately to prevent white/grey flash
             document.documentElement.style.backgroundColor = '#0f172a';
 
-            // 1. Check for Token in URL hash
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
             let idToken = hashParams.get('id_token');
             
@@ -25,55 +23,92 @@ import Layout from '../layouts/Layout.astro';
                 idToken = localStorage.getItem('cognito_id_token');
             }
 
-            // 2. If no token, hide the body and redirect INSTANTLY
             if (!idToken) {
                 document.documentElement.style.visibility = 'hidden';
                 const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_CLIENT_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
                 window.location.href = loginUrl;
             } else {
-                // 3. If they have a token, show the page
                 document.documentElement.style.visibility = 'visible';
             }
         })();
     </script>
-    <!-- Back to Home Link -->
-    <div id="back-link-container" class="max-w-4xl mx-auto px-6 pt-6" style="display: none;">
-        <a href="/" class="text-gray-400 hover:text-white text-sm flex items-center gap-2">
-            ← Back to Home
-        </a>
+
+    <!-- Loading Spinner -->
+    <div id="loadingState" class="max-w-5xl mx-auto py-20 px-6 text-center">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mb-4"></div>
+        <p class="text-gray-400">Loading your dashboard...</p>
     </div>
 
-    <div id="app-container" class="max-w-4xl mx-auto py-12 px-6" style="display: none;">
+    <!-- Main Dashboard -->
+    <div id="app-container" class="max-w-5xl mx-auto py-12 px-6" style="display: none;">
         
-        <div class="mb-8">
+        <!-- Welcome Header -->
+        <div class="mb-10">
             <h1 class="text-3xl font-extrabold mb-2">Dashboard</h1>
             <p class="text-gray-400">Welcome back, <span id="userFirstName" class="text-white font-bold">User</span>!</p>
         </div>
 
-        <div class="bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-xl max-w-xl">
-            <h2 class="text-xl font-bold mb-4 text-white">Generate API Key</h2>
-            <p class="text-sm text-gray-400 mb-6">Generate a new API key to start sending events from your store.</p>
-            
-            <input type="text" id="shopName" placeholder="e.g., nike" class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-white focus:outline-none focus:border-red-400 mb-4" />
-            <button id="genBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded transition-colors w-full">
-                Generate Key
-            </button>
+        <!-- Step 1: Generate a Key (Moved to Top for First-Time Users) -->
+        <div class="bg-gray-800 p-8 rounded-xl border border-gray-700 shadow-xl mb-10">
+            <div class="flex items-start gap-4">
+                <div class="bg-red-500 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">1</div>
+                <div class="flex-grow">
+                    <h2 class="text-xl font-bold text-white mb-2">Generate a new API Key</h2>
+                    <p class="text-sm text-gray-400 mb-4">Enter your store name (e.g., "nike") to generate a key. You can generate multiple keys for different stores.</p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" id="shopName" placeholder="e.g., nike" class="bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-red-400 flex-grow font-mono text-sm" />
+                        <button id="genBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition-colors whitespace-nowrap">
+                            Generate Key
+                        </button>
+                    </div>
 
-            <div id="error-box" class="mt-4 text-red-400 font-mono text-sm hidden break-all"></div>
+                    <!-- Error / Success Messages -->
+                    <div id="error-box" class="mt-4 text-red-400 font-mono text-sm hidden break-all"></div>
 
-            <div id="result" class="mt-6 hidden">
-                <p class="text-sm text-gray-400 mb-2">✅ <strong>Success!</strong> Here is your API Key:</p>
-                <div class="flex gap-2">
-                    <div id="apiKeyDisplay" class="bg-gray-900 border border-gray-700 p-3 rounded font-mono text-green-400 flex-grow text-sm break-all"></div>
-                    <button id="copyBtn" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded font-bold text-sm transition-colors">Copy</button>
+                    <div id="result" class="mt-6 bg-gray-900 p-4 rounded-lg border border-green-500/30 hidden">
+                        <p class="text-sm text-green-400 font-bold mb-2">✅ Key generated successfully!</p>
+                        <p class="text-xs text-gray-500 mb-2">Copy it now. You won't be able to see it again.</p>
+                        <div class="flex gap-2">
+                            <div id="apiKeyDisplay" class="bg-gray-800 border border-gray-700 p-3 rounded font-mono text-green-400 flex-grow text-sm break-all"></div>
+                            <button id="copyBtn" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded font-bold text-sm transition-colors">Copy</button>
+                        </div>
+                    </div>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">Save this key. It will not be shown again.</p>
+            </div>
+        </div>
+
+        <!-- Step 2: Existing Keys Table -->
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-white mb-2">Your API Keys</h2>
+            <p class="text-sm text-gray-400">All the keys you have generated. The API key is your permanent credential, so keep it safe.</p>
+        </div>
+
+        <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-gray-300">
+                    <thead class="text-xs uppercase bg-gray-900 text-gray-400 border-b border-gray-700">
+                        <tr>
+                            <th class="px-6 py-4 font-semibold">Shop Domain</th>
+                            <th class="px-6 py-4 font-semibold">API Key</th>
+                            <th class="px-6 py-4 font-semibold">Plan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="keysTableBody">
+                        <!-- Rows populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <!-- Empty State -->
+            <div id="noKeys" class="p-10 text-center text-gray-500 hidden">
+                <svg class="w-12 h-12 mx-auto text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+                <p>You haven't generated any API keys yet.</p>
+                <p class="text-sm mt-1">Use the form above to create your first key!</p>
             </div>
         </div>
     </div>
 
-    <script>
-        // This script runs AFTER the page is rendered (so we know they are authenticated)
+    <script is:inline>
         const API_ENDPOINT = "https://9q2w68wtrl.execute-api.us-east-1.amazonaws.com/v1/auth/generate";
 
         function parseJwt(token) {
@@ -85,14 +120,12 @@ import Layout from '../layouts/Layout.astro';
             return JSON.parse(jsonPayload);
         }
 
-        document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener("DOMContentLoaded", async () => {
             const idToken = localStorage.getItem('cognito_id_token');
             if (!idToken) return; 
 
-            // Reveal the dashboard container
+            document.getElementById('loadingState').style.display = 'none';
             document.getElementById('app-container').style.display = 'block';
-            // Reveal the back link
-            document.getElementById('back-link-container').style.display = 'block';
 
             // Show User Info
             try {
@@ -104,7 +137,8 @@ import Layout from '../layouts/Layout.astro';
                 window.location.reload();
             }
 
-            // Generate Key Logic
+            const keysTableBody = document.getElementById('keysTableBody');
+            const noKeys = document.getElementById('noKeys');
             const btn = document.getElementById('genBtn');
             const input = document.getElementById('shopName');
             const result = document.getElementById('result');
@@ -112,6 +146,44 @@ import Layout from '../layouts/Layout.astro';
             const apiKeyDisplay = document.getElementById('apiKeyDisplay');
             const copyBtn = document.getElementById('copyBtn');
 
+            // 🛠️ FETCH EXISTING KEYS ON LOAD
+            async function loadKeys() {
+                try {
+                    const response = await fetch(API_ENDPOINT, {
+                        method: 'GET',
+                        headers: { 'Authorization': `Bearer ${idToken}` }
+                    });
+                    const data = await response.json();
+                    
+                    keysTableBody.innerHTML = "";
+                    
+                    if (data.success && data.keys.length > 0) {
+                        noKeys.classList.add('hidden');
+                        data.keys.forEach(key => {
+                            const tr = document.createElement('tr');
+                            tr.className = "border-b border-gray-700 hover:bg-gray-750";
+                            tr.innerHTML = `
+                                <td class="px-6 py-4 text-white font-medium">${key.shop_domain}</td>
+                                <td class="px-6 py-4 font-mono text-green-400 text-xs">${key.api_key}</td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 py-1 rounded text-xs font-bold uppercase tracking-wide ${key.plan === 'pro' ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-300'}">
+                                        ${key.plan}
+                                    </span>
+                                </td>
+                            `;
+                            keysTableBody.appendChild(tr);
+                        });
+                    } else {
+                        noKeys.classList.remove('hidden');
+                    }
+                } catch (e) {
+                    console.error("Failed to load keys", e);
+                }
+            }
+
+            loadKeys(); // Run on page load
+
+            // 🛠️ GENERATE NEW KEY
             btn.addEventListener('click', async () => {
                 const shopName = input.value.trim().toLowerCase();
                 errorBox.classList.add('hidden');
@@ -141,12 +213,21 @@ import Layout from '../layouts/Layout.astro';
                     if (data.success) {
                         result.classList.remove('hidden');
                         apiKeyDisplay.innerText = data.api_key;
+                        loadKeys(); // Refresh the table with the new key
+                        input.value = ""; // Clear input
                     } else {
                         throw new Error(data.error || "Failed to generate key.");
                     }
                 } catch (err) {
-                    errorBox.innerText = "Error: " + err.message;
-                    errorBox.classList.remove('hidden');
+                    if (err.message.includes("Invalid or expired token")) {
+                        errorBox.innerText = "Your session expired. Redirecting to login...";
+                        errorBox.classList.remove('hidden');
+                        localStorage.removeItem('cognito_id_token');
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        errorBox.innerText = "Error: " + err.message;
+                        errorBox.classList.remove('hidden');
+                    }
                 } finally {
                     btn.innerText = "Generate Key";
                     btn.disabled = false;
