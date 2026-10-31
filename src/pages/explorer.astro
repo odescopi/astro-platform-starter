@@ -1,14 +1,17 @@
 ---
 import Layout from '../layouts/Layout.astro';
+
+// 🛠️ Read environment variables from Netlify
+const API_URL = import.meta.env.PUBLIC_API_URL;
+const COGNITO_ID = import.meta.env.PUBLIC_COGNITO_CLIENT_ID;
+const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 ---
 
 <Layout title="GetInsightStream - SQL Explorer">
     
     <!-- 🛠️ THE ZERO-FLASH FIX -->
-    <script is:inline>
+    <script is:inline define:vars={{ COGNITO_ID, COGNITO_DOMAIN }}>
         (function() {
-            const COGNITO_DOMAIN = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com";
-            const COGNITO_CLIENT_ID = "267de0qkjqbuchbijhufmso1oe";
             const REDIRECT_URI = "https://getinsightstream.com/explorer";
 
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -23,7 +26,7 @@ import Layout from '../layouts/Layout.astro';
 
             if (!idToken) {
                 document.documentElement.style.visibility = 'hidden';
-                const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_CLIENT_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+                const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
                 window.location.href = loginUrl;
             } else {
                 document.documentElement.style.visibility = 'visible';
@@ -92,9 +95,9 @@ import Layout from '../layouts/Layout.astro';
 
     </div>
 
-    <script is:inline>
-        const INGEST_ENDPOINT = "https://9q2w68wtrl.execute-api.us-east-1.amazonaws.com/v1/events";
-        const QUERY_ENDPOINT = "https://9q2w68wtrl.execute-api.us-east-1.amazonaws.com/v1/query";
+    <script is:inline define:vars={{ API_URL }}>
+        const INGEST_ENDPOINT = `${API_URL}/v1/events`;
+        const QUERY_ENDPOINT = `${API_URL}/v1/query`;
 
         document.addEventListener("DOMContentLoaded", () => {
             const runBtn = document.getElementById('runBtn');
