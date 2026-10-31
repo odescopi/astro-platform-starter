@@ -1,14 +1,18 @@
 ---
 import Layout from '../layouts/Layout.astro';
+
+// 🛠️ Read environment variables from Netlify
+const API_URL = import.meta.env.PUBLIC_API_URL;
+const COGNITO_ID = import.meta.env.PUBLIC_COGNITO_CLIENT_ID;
+const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 ---
 
 <Layout title="GetInsightStream - Dashboard">
     
     <!-- 🛠️ ZERO-FLASH & AUTO-LOGIN FIX -->
-    <script is:inline>
+    <!-- We pass the variables into the inline script using define:vars -->
+    <script is:inline define:vars={{ API_URL, COGNITO_ID, COGNITO_DOMAIN }}>
         (function() {
-            const COGNITO_DOMAIN = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com";
-            const COGNITO_CLIENT_ID = "267de0qkjqbuchbijhufmso1oe";
             const REDIRECT_URI = "https://getinsightstream.com/dashboard";
 
             document.documentElement.style.backgroundColor = '#0f172a';
@@ -25,7 +29,7 @@ import Layout from '../layouts/Layout.astro';
 
             if (!idToken) {
                 document.documentElement.style.visibility = 'hidden';
-                const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_CLIENT_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+                const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
                 window.location.href = loginUrl;
             } else {
                 document.documentElement.style.visibility = 'visible';
@@ -42,7 +46,6 @@ import Layout from '../layouts/Layout.astro';
     <!-- Main Dashboard -->
     <div id="app-container" class="max-w-5xl mx-auto py-12 px-6" style="display: none;">
         
-        <!-- Welcome Header -->
         <div class="mb-10">
             <h1 class="text-3xl font-extrabold mb-2">Dashboard</h1>
             <p class="text-gray-400">Welcome back, <span id="userFirstName" class="text-white font-bold">User</span>!</p>
@@ -107,8 +110,9 @@ import Layout from '../layouts/Layout.astro';
         </div>
     </div>
 
-    <script is:inline>
-        const API_ENDPOINT = "https://9q2w68wtrl.execute-api.us-east-1.amazonaws.com/v1/auth/generate";
+    <!-- Pass API_URL to the main script -->
+    <script is:inline define:vars={{ API_URL }}>
+        const API_ENDPOINT = `${API_URL}/v1/auth/generate`;
 
         function parseJwt(token) {
             var base64Url = token.split('.')[1];
