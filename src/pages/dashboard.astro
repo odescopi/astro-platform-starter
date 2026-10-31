@@ -36,6 +36,12 @@ import Layout from '../layouts/Layout.astro';
             }
         })();
     </script>
+    <!-- Back to Home Link -->
+    <div id="back-link-container" class="max-w-4xl mx-auto px-6 pt-6" style="display: none;">
+        <a href="/" class="text-gray-400 hover:text-white text-sm flex items-center gap-2">
+            ← Back to Home
+        </a>
+    </div>
 
     <div id="app-container" class="max-w-4xl mx-auto py-12 px-6" style="display: none;">
         
@@ -85,6 +91,8 @@ import Layout from '../layouts/Layout.astro';
 
             // Reveal the dashboard container
             document.getElementById('app-container').style.display = 'block';
+            // Reveal the back link
+            document.getElementById('back-link-container').style.display = 'block';
 
             // Show User Info
             try {
