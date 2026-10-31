@@ -24,13 +24,14 @@
     </div>
 
     <!-- ROW 2: Links (Left) and Action Button (Right) -->
-        <div class="flex flex-col sm:flex-row items-center justify-between w-full gap-4 mt-2">
+    <div class="flex flex-col sm:flex-row items-center justify-between w-full gap-4 mt-2">
         
         <!-- App Links (Always visible!) -->
         <ul class="flex flex-wrap items-center gap-x-6 gap-y-2">
             <li><a href="/pricing" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Pricing</a></li>
             <li><a href="/install" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Install</a></li>
-            <li><a href="/explorer" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">SQL Explorer</a></li>
+            <!-- 🛠️ CACHE BUSTER ADDED HERE -->
+            <li><a href="/explorer?v=2" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">SQL Explorer</a></li>
         </ul>
 
         <!-- CTA Button -->
