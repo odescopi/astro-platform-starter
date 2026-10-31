@@ -3,6 +3,34 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="GetInsightStream - SQL Explorer">
+    
+    <!-- 🛠️ THE ZERO-FLASH FIX: Hide the body until we check for the token -->
+    <script is:inline>
+        (function() {
+            const COGNITO_DOMAIN = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com";
+            const COGNITO_CLIENT_ID = "267de0qkjqbuchbijhufmso1oe";
+            const REDIRECT_URI = "https://getinsightstream.com/explorer";
+
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            let idToken = hashParams.get('id_token');
+            
+            if (idToken) {
+                localStorage.setItem('cognito_id_token', idToken);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else {
+                idToken = localStorage.getItem('cognito_id_token');
+            }
+
+            if (!idToken) {
+                document.documentElement.style.visibility = 'hidden'; // Hide immediately
+                const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_CLIENT_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+                window.location.href = loginUrl;
+            } else {
+                document.documentElement.style.visibility = 'visible'; // Show if logged in
+            }
+        })();
+    </script>
+
     <div class="max-w-6xl mx-auto py-12 px-6">
         
         <div class="mb-8">
@@ -204,15 +232,5 @@ import Layout from '../layouts/Layout.astro';
                 resultsContainer.classList.remove('hidden');
             }
         });
-    </script>
-        <script is:inline>
-        // Protect this page: Redirect to login if no token exists
-        if (!localStorage.getItem('cognito_id_token')) {
-            const COGNITO_DOMAIN = "https://getinsightstream-auth.auth.us-east-1.amazoncognito.com";
-            const COGNITO_CLIENT_ID = "267de0qkjqbuchbijhufmso1oe";
-            // Redirect back to explorer page after login
-            const REDIRECT_URI = "https://getinsightstream.com/explorer";
-            window.location.href = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_CLIENT_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
-        }
     </script>
 </Layout>
