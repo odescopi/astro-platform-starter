@@ -48,7 +48,7 @@ import Layout from '../layouts/Layout.astro';
             <p class="text-gray-400">Welcome back, <span id="userFirstName" class="text-white font-bold">User</span>!</p>
         </div>
 
-        <!-- Step 1: Generate a Key (Moved to Top for First-Time Users) -->
+        <!-- Step 1: Generate a Key -->
         <div class="bg-gray-800 p-8 rounded-xl border border-gray-700 shadow-xl mb-10">
             <div class="flex items-start gap-4">
                 <div class="bg-red-500 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">1</div>
@@ -63,7 +63,6 @@ import Layout from '../layouts/Layout.astro';
                         </button>
                     </div>
 
-                    <!-- Error / Success Messages -->
                     <div id="error-box" class="mt-4 text-red-400 font-mono text-sm hidden break-all"></div>
 
                     <div id="result" class="mt-6 bg-gray-900 p-4 rounded-lg border border-green-500/30 hidden">
@@ -127,7 +126,6 @@ import Layout from '../layouts/Layout.astro';
             document.getElementById('loadingState').style.display = 'none';
             document.getElementById('app-container').style.display = 'block';
 
-            // Show User Info
             try {
                 const user = parseJwt(idToken);
                 const email = user.email || "User";
@@ -146,15 +144,18 @@ import Layout from '../layouts/Layout.astro';
             const apiKeyDisplay = document.getElementById('apiKeyDisplay');
             const copyBtn = document.getElementById('copyBtn');
 
-            // 🛠️ FETCH EXISTING KEYS ON LOAD
+            // FETCH EXISTING KEYS
             async function loadKeys() {
                 try {
                     const response = await fetch(API_ENDPOINT, {
                         method: 'GET',
-                        headers: { 'Authorization': `Bearer ${idToken}` }
+                        headers: { 
+                            'Authorization': `Bearer ${idToken}`,
+                            'Content-Type': 'application/json'
+                        }
                     });
-                    const data = await response.json();
                     
+                    const data = await response.json();
                     keysTableBody.innerHTML = "";
                     
                     if (data.success && data.keys.length > 0) {
@@ -178,12 +179,13 @@ import Layout from '../layouts/Layout.astro';
                     }
                 } catch (e) {
                     console.error("Failed to load keys", e);
+                    keysTableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-red-400 text-center">Failed to load keys. Please refresh.</td></tr>`;
                 }
             }
 
-            loadKeys(); // Run on page load
+            loadKeys(); 
 
-            // 🛠️ GENERATE NEW KEY
+            // GENERATE NEW KEY
             btn.addEventListener('click', async () => {
                 const shopName = input.value.trim().toLowerCase();
                 errorBox.classList.add('hidden');
@@ -213,8 +215,10 @@ import Layout from '../layouts/Layout.astro';
                     if (data.success) {
                         result.classList.remove('hidden');
                         apiKeyDisplay.innerText = data.api_key;
-                        loadKeys(); // Refresh the table with the new key
-                        input.value = ""; // Clear input
+                        input.value = ""; 
+                        
+                        // Wait 500ms then refresh table
+                        setTimeout(() => loadKeys(), 500); 
                     } else {
                         throw new Error(data.error || "Failed to generate key.");
                     }
