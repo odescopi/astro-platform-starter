@@ -73,7 +73,7 @@ import Layout from '../layouts/Layout.astro';
 
     </div>
 
-    <script>
+    <script is:inline>
         document.addEventListener("DOMContentLoaded", () => {
             const apiKeyInput = document.getElementById('apiKeyInput');
             const snippetCode = document.getElementById('snippetCode');
@@ -82,19 +82,18 @@ import Layout from '../layouts/Layout.astro';
             function updateSnippet() {
                 const key = apiKeyInput.value.trim() || "YOUR_API_KEY_HERE";
                 
-                // Using string concatenation to avoid Astro compiler issues with backslashes
                 let code = "<!-- GetInsightStream Tracker -->\n";
                 code += "<script\n";
                 code += "  src=\"https://getinsightstream.com/tracker.js\"\n";
                 code += "  data-api-key=\"" + key + "\"\n";
                 code += "  defer>\n";
-                code += "</script>";
+                code += "<" + "/script>"; // This is the fix: split the closing tag
                 
                 snippetCode.textContent = code;
             }
 
             apiKeyInput.addEventListener('input', updateSnippet);
-            updateSnippet(); // Initial load
+            updateSnippet();
 
             copyBtn.addEventListener('click', () => {
                 navigator.clipboard.writeText(snippetCode.textContent);
