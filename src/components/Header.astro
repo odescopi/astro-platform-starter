@@ -26,9 +26,10 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
     <div class="flex flex-col sm:flex-row items-center justify-between w-full gap-4 mt-2">
         
         <ul class="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <li><a href="/pricing" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Pricing</a></li>
-            <li><a href="/install" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Install</a></li>
-            <li><a href="/explorer?v=2" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">SQL Explorer</a></li>
+            <!-- 🛠️ ADDED IDs AND DATA ATTRIBUTES FOR ACTIVE STATE -->
+            <li><a href="/pricing" id="nav-pricing" class="nav-link text-gray-400 hover:text-white transition-colors text-sm font-medium">Pricing</a></li>
+            <li><a href="/install" id="nav-install" class="nav-link text-gray-400 hover:text-white transition-colors text-sm font-medium">Install</a></li>
+            <li><a href="/explorer?v=2" id="nav-explorer" class="nav-link text-gray-400 hover:text-white transition-colors text-sm font-medium">SQL Explorer</a></li>
         </ul>
 
         <a href="/dashboard" id="nav-cta" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-5 rounded transition-colors text-sm whitespace-nowrap">
@@ -43,11 +44,25 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
         const token = localStorage.getItem('cognito_id_token');
         const cta = document.getElementById('nav-cta');
         const logoutBtn = document.getElementById('logoutBtnHeader');
+        
+        // 🛠️ HIGHLIGHT ACTIVE LINK
+        const currentPath = window.location.pathname;
+        
+        if (currentPath.includes('/pricing')) {
+            document.getElementById('nav-pricing').classList.add('text-red-400', 'font-bold');
+            document.getElementById('nav-pricing').classList.remove('text-gray-400');
+        } else if (currentPath.includes('/install')) {
+            document.getElementById('nav-install').classList.add('text-red-400', 'font-bold');
+            document.getElementById('nav-install').classList.remove('text-gray-400');
+        } else if (currentPath.includes('/explorer')) {
+            document.getElementById('nav-explorer').classList.add('text-red-400', 'font-bold');
+            document.getElementById('nav-explorer').classList.remove('text-gray-400');
+        }
 
         if (token) {
             logoutBtn.classList.remove('hidden');
             
-            if (window.location.pathname === '/dashboard' || window.location.pathname === '/dashboard/') {
+            if (currentPath === '/dashboard' || currentPath === '/dashboard/') {
                 cta.style.display = "none";
             } else {
                 cta.innerText = "Go to Dashboard";
@@ -55,10 +70,17 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 
             logoutBtn.addEventListener('click', (e) => {
                 e.preventDefault();
+                logoutBtn.innerText = "Logging out...";
+                logoutBtn.disabled = true;
+                logoutBtn.classList.add('opacity-50');
+
                 localStorage.removeItem('cognito_id_token');
-                // 🛠️ THE FIX: Using the dynamic environment variables
+                
                 const logoutUrl = `${COGNITO_DOMAIN}/logout?client_id=${COGNITO_ID}&logout_uri=https://getinsightstream.com`;
-                window.location.href = logoutUrl;
+                
+                setTimeout(() => {
+                    window.location.href = logoutUrl;
+                }, 300);
             });
         }
     });
