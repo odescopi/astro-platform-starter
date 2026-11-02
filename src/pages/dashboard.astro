@@ -48,6 +48,34 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             <p class="text-gray-400">Welcome back, <span id="userFirstName" class="text-white font-bold">User</span>!</p>
         </div>
 
+        <!-- 🛠️ PAYWALL BANNER -->
+        <div id="upgradeBanner" class="bg-red-500/10 border border-red-500/50 rounded-xl p-6 mb-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hidden">
+            <div>
+                <h3 class="text-lg font-bold text-red-400 mb-1">You're running out of free events!</h3>
+                <p class="text-sm text-red-200/70">You've used <span id="bannerUsage">0</span> / 10,000 events on the Free plan. Upgrade to Pro to keep your data flowing.</p>
+            </div>
+            <a href="/pricing" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg transition-colors whitespace-nowrap">
+                Upgrade to Pro
+            </a>
+        </div>
+
+        <!-- 🛠️ USAGE PROGRESS BAR -->
+        <div id="usageCard" class="bg-gray-800 p-8 rounded-xl border border-gray-700 shadow-xl mb-10 hidden">
+            <div class="flex justify-between items-end mb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-white mb-1">Monthly Usage</h2>
+                    <p class="text-sm text-gray-400">Events ingested across all API keys this month.</p>
+                </div>
+                <div class="text-right">
+                    <span id="usageText" class="text-2xl font-extrabold text-white">0</span>
+                    <span id="limitText" class="text-sm text-gray-500">/ 10,000</span>
+                </div>
+            </div>
+            <div class="w-full bg-gray-900 rounded-full h-3 overflow-hidden border border-gray-700">
+                <div id="usageBar" class="bg-green-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </div>
+
         <!-- Step 1: Generate a Key -->
         <div class="bg-gray-800 p-6 sm:p-8 rounded-xl border border-gray-700 shadow-xl mb-10">
             <div class="flex items-start gap-4">
@@ -90,7 +118,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 
         <div id="tableContainer" class="transition-all duration-300">
             
-            <!-- 🖥️ DESKTOP TABLE (Hidden on mobile) -->
+            <!-- 🖥️ DESKTOP TABLE -->
             <div class="hidden sm:block bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm text-gray-300">
@@ -107,7 +135,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 </div>
             </div>
 
-            <!-- 📱 MOBILE CARDS (Hidden on desktop) -->
+            <!-- 📱 MOBILE CARDS -->
             <div id="mobileKeysContainer" class="flex flex-col gap-4 sm:hidden"></div>
 
             <!-- Empty State -->
@@ -185,15 +213,16 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             const keysTableBody = document.getElementById('keysTableBody');
             const mobileKeysContainer = document.getElementById('mobileKeysContainer');
             const noKeys = document.getElementById('noKeys');
-            const btn = document.getElementById('genBtn');
-            const input = document.getElementById('shopName');
-            const result = document.getElementById('result');
-            const errorBox = document.getElementById('error-box');
-            const apiKeyDisplay = document.getElementById('apiKeyDisplay');
-            const copyBtn = document.getElementById('copyBtn');
-            const toggleTableBtn = document.getElementById('toggleTableBtn');
-            const tableContainer = document.getElementById('tableContainer');
+            
+            // Paywall Elements
+            const usageCard = document.getElementById('usageCard');
+            const usageText = document.getElementById('usageText');
+            const limitText = document.getElementById('limitText');
+            const usageBar = document.getElementById('usageBar');
+            const upgradeBanner = document.getElementById('upgradeBanner');
+            const bannerUsage = document.getElementById('bannerUsage');
 
+            // Modal Elements
             const warningModal = document.getElementById('warningModal');
             const cancelRevokeBtn = document.getElementById('cancelRevokeBtn');
             const confirmRevokeBtn = document.getElementById('confirmRevokeBtn');
@@ -207,57 +236,25 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 if (!keyToRevoke) return;
                 confirmRevokeBtn.innerText = "Revoking...";
                 confirmRevokeBtn.disabled = true;
-                cancelRevokeBtn.disabled = true;
-
+                
                 try {
-                    const response = await fetch(API_ENDPOINT, {
+                    await fetch(API_ENDPOINT, {
                         method: 'DELETE',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${idToken}`
-                        },
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
                         body: JSON.stringify({ api_key: keyToRevoke })
                     });
-                    const data = await response.json();
-                    if (data.success) window.location.reload(); 
-                    else alert("Failed to delete key: " + data.error);
+                    window.location.reload(); 
                 } catch (e) {
-                    alert("Network error. Please try again.");
-                } finally {
-                    confirmRevokeBtn.innerText = "Yes, Revoke Key";
-                    confirmRevokeBtn.disabled = false;
-                    cancelRevokeBtn.disabled = false;
-                    warningModal.classList.add('hidden');
-                    keyToRevoke = null;
+                    alert("Failed to delete key.");
                 }
             });
 
-            let isTableVisible = true;
-            toggleTableBtn.addEventListener('click', () => {
-                isTableVisible = !isTableVisible;
-                if (isTableVisible) {
-                    tableContainer.style.maxHeight = '2000px';
-                    tableContainer.style.opacity = '1';
-                    toggleTableBtn.innerText = "Hide Keys";
-                } else {
-                    tableContainer.style.maxHeight = '0px';
-                    tableContainer.style.opacity = '0';
-                    toggleTableBtn.innerText = "Show Keys";
-                }
-            });
-            
-            tableContainer.style.maxHeight = '2000px';
-            tableContainer.style.opacity = '1';
-
-            // FETCH EXISTING KEYS
+            // FETCH EXISTING KEYS & UPDATE USAGE BAR
             async function loadKeys() {
                 try {
                     const response = await fetch(API_ENDPOINT, {
                         method: 'GET',
-                        headers: { 
-                            'Authorization': `Bearer ${idToken}`,
-                            'Content-Type': 'application/json'
-                        }
+                        headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }
                     });
                     
                     const data = await response.json();
@@ -267,8 +264,19 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     if (data.success && data.keys.length > 0) {
                         noKeys.classList.add('hidden');
                         
+                        // Calculate total usage across all keys
+                        let totalUsage = 0;
+                        let highestLimit = 10000; // Default Free Limit
+                        let currentPlan = 'free';
+
                         data.keys.forEach((key, index) => {
-                            // 🖥️ Desktop Table Row
+                            totalUsage += key.event_count || 0;
+                            if (key.plan === 'pro') {
+                                highestLimit = 250000;
+                                currentPlan = 'pro';
+                            }
+
+                            // Desktop Row
                             const tr = document.createElement('tr');
                             tr.className = "border-b border-gray-700 hover:bg-gray-750";
                             tr.innerHTML = `
@@ -288,7 +296,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                             `;
                             keysTableBody.appendChild(tr);
 
-                            // 📱 Mobile Card
+                            // Mobile Card
                             const card = document.createElement('div');
                             card.className = "bg-gray-800 rounded-xl border border-gray-700 p-5 shadow-lg";
                             card.innerHTML = `
@@ -307,16 +315,50 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                             `;
                             mobileKeysContainer.appendChild(card);
                         });
+
+                        // 🛠️ UPDATE PAYWALL UI
+                        usageCard.classList.remove('hidden');
+                        usageText.innerText = totalUsage.toLocaleString();
+                        limitText.innerText = `/ ${highestLimit.toLocaleString()}`;
+                        
+                        let percentage = (totalUsage / highestLimit) * 100;
+                        if (percentage > 100) percentage = 100;
+                        
+                        usageBar.style.width = `${percentage}%`;
+                        
+                        // Change color based on usage
+                        if (percentage > 90) {
+                            usageBar.className = "bg-red-500 h-3 rounded-full transition-all duration-500";
+                        } else if (percentage > 75) {
+                            usageBar.className = "bg-yellow-500 h-3 rounded-full transition-all duration-500";
+                        } else {
+                            usageBar.className = "bg-green-500 h-3 rounded-full transition-all duration-500";
+                        }
+
+                        // Show Upgrade Banner if Free user hits 9,000 events
+                        if (currentPlan === 'free' && totalUsage >= 9000) {
+                            upgradeBanner.classList.remove('hidden');
+                            bannerUsage.innerText = totalUsage.toLocaleString();
+                        }
+
                     } else {
                         noKeys.classList.remove('hidden');
+                        usageCard.classList.add('hidden');
                     }
                 } catch (e) {
                     console.error("Failed to load keys", e);
-                    keysTableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-red-400 text-center">Failed to load keys. Please refresh.</td></tr>`;
                 }
             }
 
             loadKeys(); 
+
+            // Generate Key Logic
+            const btn = document.getElementById('genBtn');
+            const input = document.getElementById('shopName');
+            const result = document.getElementById('result');
+            const errorBox = document.getElementById('error-box');
+            const apiKeyDisplay = document.getElementById('apiKeyDisplay');
+            const copyBtn = document.getElementById('copyBtn');
 
             btn.addEventListener('click', async () => {
                 const shopName = input.value.trim().toLowerCase();
@@ -335,10 +377,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 try {
                     const response = await fetch(API_ENDPOINT, {
                         method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${idToken}`
-                        },
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
                         body: JSON.stringify({ shop_domain: shopName })
                     });
 
@@ -350,18 +389,11 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         input.value = ""; 
                         setTimeout(() => loadKeys(), 500); 
                     } else {
-                        throw new Error(data.error || "Failed to generate key.");
+                        throw new Error(data.error);
                     }
                 } catch (err) {
-                    if (err.message.includes("Invalid or expired token")) {
-                        errorBox.innerText = "Your session expired. Redirecting to login...";
-                        errorBox.classList.remove('hidden');
-                        localStorage.removeItem('cognito_id_token');
-                        setTimeout(() => window.location.reload(), 1500);
-                    } else {
-                        errorBox.innerText = "Error: " + err.message;
-                        errorBox.classList.remove('hidden');
-                    }
+                    errorBox.innerText = "Error: " + err.message;
+                    errorBox.classList.remove('hidden');
                 } finally {
                     btn.innerText = "Generate Key";
                     btn.disabled = false;
