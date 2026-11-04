@@ -143,7 +143,8 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             const mm = String(today.getMonth() + 1).padStart(2, '0'); 
             const dd = String(today.getDate()).padStart(2, '0');
             
-            sqlInput.value = `SELECT event_type, COUNT(*) as count FROM website_analytics.events WHERE shop='your_shop_name' AND year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY event_type`;
+            // 🛠️ STANDARDIZED DEFAULT QUERY
+            sqlInput.value = `SELECT shop, event_type, COUNT(*) as count FROM website_analytics.events WHERE shop='your_shop_name' AND year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY shop, event_type`;
 
             // 🛠️ QUERY TEMPLATE LOGIC (Auto-runs the query on click)
             document.querySelectorAll('.template-btn').forEach(btn => {
@@ -153,14 +154,15 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     
                     let query = "";
                     if (templateType === 'views') {
-                        query = `SELECT page_url, COUNT(*) as total_views FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'page_view' AND year='${yyyy}' AND month='${mm}' GROUP BY page_url ORDER BY total_views DESC LIMIT 10;`;
+                        query = `SELECT shop, page_url, COUNT(*) as total_views FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'page_view' AND year='${yyyy}' AND month='${mm}' GROUP BY shop, page_url ORDER BY total_views DESC LIMIT 10;`;
                     } else if (templateType === 'cart') {
-                        // 🛠️ FIXED: Using GROUP BY to avoid Athena's nested CASE bug
-                        query = `SELECT event_type, COUNT(DISTINCT session_id) as unique_sessions FROM website_analytics.events WHERE shop='${currentShop}' AND event_type IN ('add_to_cart', 'checkout_start', 'purchase') AND year='${yyyy}' AND month='${mm}' GROUP BY event_type;`;
+                        query = `SELECT shop, event_type, COUNT(DISTINCT session_id) as unique_sessions FROM website_analytics.events WHERE shop='${currentShop}' AND event_type IN ('add_to_cart', 'checkout_start', 'purchase') AND year='${yyyy}' AND month='${mm}' GROUP BY shop, event_type;`;
                     } else if (templateType === 'revenue') {
-                        query = `SELECT SUM(revenue) as total_revenue, COUNT(DISTINCT order_id) as total_orders FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'purchase' AND year='${yyyy}' AND month='${mm}' AND day='${dd}';`;
+                        // 🛠️ FIXED: Added GROUP BY shop to resolve Athena partition bug
+                        query = `SELECT shop, SUM(COALESCE(revenue, 0)) as total_revenue, COUNT(DISTINCT order_id) as total_orders FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'purchase' AND year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY shop;`;
                     } else if (templateType === 'video') {
-                        query = `SELECT event_type, COUNT(*) as total_events FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'video_watched' GROUP BY event_type;`;
+                        // 🛠️ STANDARDIZED
+                        query = `SELECT shop, event_type, COUNT(*) as total_events FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'video_watched' GROUP BY shop, event_type;`;
                     }
                     
                     sqlInput.value = query;
