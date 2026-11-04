@@ -138,6 +138,50 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
         </div>
     </div>
 
+    <!-- 🛠️ NEW: ONBOARDING MODAL -->
+    <div id="onboardingModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden transition-opacity duration-300">
+        <div class="bg-gray-800 border border-gray-700 rounded-2xl p-8 max-w-lg w-full mx-4 shadow-2xl relative overflow-hidden">
+            <!-- Background Glow -->
+            <div class="absolute -top-20 -right-20 w-40 h-40 bg-red-500 rounded-full blur-3xl opacity-20"></div>
+            
+            <div class="relative z-10">
+                <h2 class="text-2xl font-extrabold text-white mb-2">Welcome to GetInsightStream! 🚀</h2>
+                <p class="text-gray-400 mb-6 text-sm">Let's get your store connected in 3 simple steps.</p>
+                
+                <div class="space-y-6 mb-8">
+                    <!-- Step 1 -->
+                    <div class="flex gap-4">
+                        <div class="bg-gray-900 border border-gray-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">1</div>
+                        <div>
+                            <h3 class="text-white font-bold text-sm mb-1">Generate an API Key</h3>
+                            <p class="text-gray-400 text-xs">Scroll down and enter your shop name to generate a secure API key.</p>
+                        </div>
+                    </div>
+                    <!-- Step 2 -->
+                    <div class="flex gap-4">
+                        <div class="bg-gray-900 border border-gray-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">2</div>
+                        <div>
+                            <h3 class="text-white font-bold text-sm mb-1">Paste the Snippet</h3>
+                            <p class="text-gray-400 text-xs">Go to your Shopify Theme Editor and paste the provided snippet into your <code class="text-red-400 bg-gray-900 px-1 rounded">theme.liquid</code> file.</p>
+                        </div>
+                    </div>
+                    <!-- Step 3 -->
+                    <div class="flex gap-4">
+                        <div class="bg-gray-900 border border-gray-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">3</div>
+                        <div>
+                            <h3 class="text-white font-bold text-sm mb-1">Watch Your Data Flow</h3>
+                            <p class="text-gray-400 text-xs">As customers browse, your events will automatically appear in your dashboard.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="closeOnboardingBtn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                    Got it, let's go!
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Warning Modal -->
     <div id="warningModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden transition-opacity duration-200">
         <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
@@ -214,6 +258,14 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 localStorage.removeItem('cognito_id_token');
                 window.location.reload();
             }
+
+            // 🛠️ NEW: Onboarding Modal Logic
+            const onboardingModal = document.getElementById('onboardingModal');
+            const closeOnboardingBtn = document.getElementById('closeOnboardingBtn');
+            
+            closeOnboardingBtn.addEventListener('click', () => {
+                onboardingModal.classList.add('hidden');
+            });
 
             const keysTableBody = document.getElementById('keysTableBody');
             const mobileKeysContainer = document.getElementById('mobileKeysContainer');
@@ -371,8 +423,14 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         }
 
                     } else {
+                        // 🛠️ NEW: TRIGGER ONBOARDING MODAL IF NO KEYS
                         noKeys.classList.remove('hidden');
                         usageCard.classList.add('hidden');
+                        
+                        setTimeout(() => {
+                            onboardingModal.classList.remove('hidden');
+                            setTimeout(() => onboardingModal.classList.remove('opacity-0'), 10);
+                        }, 500);
                     }
                 } catch (e) {
                     console.error("Failed to load keys", e);
