@@ -143,7 +143,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             const mm = String(today.getMonth() + 1).padStart(2, '0'); 
             const dd = String(today.getDate()).padStart(2, '0');
             
-            // 🛠️ STANDARDIZED DEFAULT QUERY (Removed shop from SELECT/GROUP BY)
+            // 🛠️ STANDARDIZED DEFAULT QUERY
             sqlInput.value = `SELECT event_type, COUNT(*) as count FROM website_analytics.events WHERE shop='your_shop_name' AND year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY event_type`;
 
             // 🛠️ QUERY TEMPLATE LOGIC
@@ -158,8 +158,8 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     } else if (templateType === 'cart') {
                         query = `SELECT event_type, COUNT(DISTINCT session_id) as unique_sessions FROM website_analytics.events WHERE shop='${currentShop}' AND event_type IN ('add_to_cart', 'checkout_start', 'purchase') AND year='${yyyy}' AND month='${mm}' GROUP BY event_type;`;
                     } else if (templateType === 'revenue') {
-                        // 🛠️ FIXED: Removed shop from SELECT and GROUP BY
-                        query = `SELECT SUM(COALESCE(revenue, 0)) as total_revenue, COUNT(DISTINCT order_id) as total_orders FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'purchase' AND year='${yyyy}' AND month='${mm}' AND day='${dd}';`;
+                        // 🛠️ THE FINAL FIX: Casting shop to string and grouping by partition
+                        query = `SELECT CAST(shop AS VARCHAR) as shop, SUM(COALESCE(revenue, 0)) as total_revenue, COUNT(DISTINCT order_id) as total_orders FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'purchase' AND year='${yyyy}' AND month='${mm}' GROUP BY CAST(shop AS VARCHAR);`;
                     } else if (templateType === 'video') {
                         query = `SELECT event_type, COUNT(*) as total_events FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'video_watched' GROUP BY event_type;`;
                     }
@@ -224,7 +224,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 
                 setTimeout(() => {
                     runBtn.click();
-                    liveIndicator.classList.remove('hidden'); // keep it visible during auto-run
+                    liveIndicator.classList.remove('hidden');
                     setTimeout(() => {
                         liveIndicator.classList.add('hidden');
                         seedBtn.innerText = "✨ Send Test Data";
