@@ -158,8 +158,8 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     } else if (templateType === 'cart') {
                         query = `SELECT event_type, COUNT(DISTINCT session_id) as unique_sessions FROM website_analytics.events WHERE shop='${currentShop}' AND event_type IN ('add_to_cart', 'checkout_start', 'purchase') AND year='${yyyy}' AND month='${mm}' GROUP BY event_type;`;
                     } else if (templateType === 'revenue') {
-                        // 🛠️ THE FIX: Use a subquery and group by shop
-                        query = `SELECT shop, SUM(COALESCE(revenue, 0)) as total_revenue, COUNT(DISTINCT order_id) as total_orders FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'purchase' AND year='${yyyy}' AND month='${mm}' GROUP BY shop;`;
+                        // 🛠️ AWS STANDARD FIX: Explicit casting
+                        query = `SELECT SUM(CAST(COALESCE(revenue, '0') AS DOUBLE)) as total_revenue, COUNT(DISTINCT order_id) as total_orders FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'purchase' AND year='${yyyy}' AND month='${mm}';`;
                     } else if (templateType === 'video') {
                         query = `SELECT event_type, COUNT(*) as total_events FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'video_watched' GROUP BY event_type;`;
                     }
@@ -287,14 +287,13 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     return;
                 }
 
-                // 🛠️ JS FIX FOR REVENUE
-                if (columns.includes('total_revenue') && columns.includes('total_orders')) {
-                    const row = rows[0];
-                    rows = [{
-                        "Total Revenue": "$" + (row.total_revenue || 0),
-                        "Total Orders": row.total_orders || 0
-                    }];
-                    columns = ["Total Revenue", "Total Orders"];
+                // 🛠️ Format the Revenue output to look nice
+                if (columns.includes('total_revenue')) {
+                    if (rows[0].total_revenue) {
+                        rows[0].total_revenue = "$" + parseFloat(rows[0].total_revenue).toFixed(2);
+                    } else {
+                        rows[0].total_revenue = "$0.00";
+                    }
                 }
 
                 if (csvUrl) {
