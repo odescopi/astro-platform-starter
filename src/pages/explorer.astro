@@ -158,8 +158,8 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     } else if (templateType === 'cart') {
                         query = `SELECT event_type, COUNT(DISTINCT session_id) as unique_sessions FROM website_analytics.events WHERE shop='${currentShop}' AND event_type IN ('add_to_cart', 'checkout_start', 'purchase') AND year='${yyyy}' AND month='${mm}' GROUP BY event_type;`;
                     } else if (templateType === 'revenue') {
-                        // 🛠️ THE ULTIMATE FIX: Only query the event_type, bypass all Athena math bugs
-                        query = `SELECT event_type FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'purchase' AND year='${yyyy}' AND month='${mm}';`;
+                        // 🛠️ THE FIX: Use a subquery and group by shop
+                        query = `SELECT shop, SUM(COALESCE(revenue, 0)) as total_revenue, COUNT(DISTINCT order_id) as total_orders FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'purchase' AND year='${yyyy}' AND month='${mm}' GROUP BY shop;`;
                     } else if (templateType === 'video') {
                         query = `SELECT event_type, COUNT(*) as total_events FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'video_watched' GROUP BY event_type;`;
                     }
@@ -288,13 +288,11 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 }
 
                 // 🛠️ JS FIX FOR REVENUE
-                if (columns.length === 1 && columns[0] === 'event_type' && rows[0].event_type === 'purchase') {
-                    const totalOrders = rows.length;
-                    const totalRevenue = totalOrders * 99.99; // Using the test data amount
-                    
+                if (columns.includes('total_revenue') && columns.includes('total_orders')) {
+                    const row = rows[0];
                     rows = [{
-                        "Total Revenue": "$" + totalRevenue.toFixed(2),
-                        "Total Orders": totalOrders
+                        "Total Revenue": "$" + (row.total_revenue || 0),
+                        "Total Orders": row.total_orders || 0
                     }];
                     columns = ["Total Revenue", "Total Orders"];
                 }
