@@ -43,7 +43,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 
         <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 mb-6 shadow-xl">
             
-            <!-- 🛠️ SHOP AND API KEY INPUTS -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
                     <label class="block text-sm font-bold mb-2 text-gray-300">API Key</label>
@@ -58,7 +57,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             <div class="mb-6 p-4 bg-gray-900 border border-gray-700 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h3 class="font-bold text-white">Need test data?</h3>
-                    <p class="text-xs text-gray-400">Send a realistic mix of 20 events (views, carts, purchases) to test all templates.</p>
+                    <p class="text-xs text-gray-400">Send a realistic mix of 20 events to test all templates.</p>
                 </div>
                 <button id="seedBtn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded text-sm transition-colors whitespace-nowrap">
                     ✨ Send Test Data
@@ -156,7 +155,8 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     if (templateType === 'views') {
                         query = `SELECT page_url, COUNT(*) as total_views FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'page_view' AND year='${yyyy}' AND month='${mm}' GROUP BY page_url ORDER BY total_views DESC LIMIT 10;`;
                     } else if (templateType === 'cart') {
-                        query = `SELECT COUNT(DISTINCT CASE WHEN event_type = 'add_to_cart' THEN session_id END) as carts_started, COUNT(DISTINCT CASE WHEN event_type = 'checkout_start' THEN session_id END) as checkouts_started, COUNT(DISTINCT CASE WHEN event_type = 'purchase' THEN session_id END) as purchases_made FROM website_analytics.events WHERE shop='${currentShop}' AND year='${yyyy}' AND month='${mm}';`;
+                        // 🛠️ FIXED: Using GROUP BY to avoid Athena's nested CASE bug
+                        query = `SELECT event_type, COUNT(DISTINCT session_id) as unique_sessions FROM website_analytics.events WHERE shop='${currentShop}' AND event_type IN ('add_to_cart', 'checkout_start', 'purchase') AND year='${yyyy}' AND month='${mm}' GROUP BY event_type;`;
                     } else if (templateType === 'revenue') {
                         query = `SELECT SUM(revenue) as total_revenue, COUNT(DISTINCT order_id) as total_orders FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'purchase' AND year='${yyyy}' AND month='${mm}' AND day='${dd}';`;
                     } else if (templateType === 'video') {
@@ -179,7 +179,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 const fakeUserId = "user_" + Date.now(); 
                 let successCount = 0;
 
-                // 🛠️ CPO FIX: Generate a realistic mix of events
                 const eventTypes = ["page_view", "page_view", "video_watched", "add_to_cart", "purchase"];
 
                 for (let i = 0; i < 20; i++) {
@@ -194,7 +193,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         user: { anonymous_id: fakeUserId },
                         session: { session_id: "sess_" + Date.now() },
                         page: { url: "https://demo-store.com/products/" + type },
-                        // Add revenue data for purchase events
                         revenue: type === "purchase" ? 99.99 : 0.0,
                         order_id: type === "purchase" ? "ord_" + Date.now() : "",
                         product_id: "prod_123"
@@ -255,7 +253,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     let queryId = data.query_id;
 
                     while (data.status === 'STARTED' || data.status === 'RUNNING' || data.status === 'QUEUED') {
-                        // 🛠️ FASTER POLLING: Changed from 2000ms to 500ms
                         await new Promise(r => setTimeout(r, 500));
                         response = await fetch(QUERY_ENDPOINT, {
                             method: 'POST',
