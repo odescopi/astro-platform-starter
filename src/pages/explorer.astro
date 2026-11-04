@@ -43,9 +43,16 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 
         <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 mb-6 shadow-xl">
             
-            <div class="mb-4">
-                <label class="block text-sm font-bold mb-2 text-gray-300">API Key</label>
-                <input type="password" id="apiKey" placeholder="sk_live_..." class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-white focus:outline-none focus:border-red-400 font-mono text-sm" />
+            <!-- 🛠️ NEW: SHOP AND API KEY INPUTS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-bold mb-2 text-gray-300">API Key</label>
+                    <input type="password" id="apiKey" placeholder="sk_live_..." class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-white focus:outline-none focus:border-red-400 font-mono text-sm" />
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2 text-gray-300">Shop Domain</label>
+                    <input type="text" id="shopName" placeholder="e.g., nike" class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-white focus:outline-none focus:border-red-400 font-mono text-sm" />
+                </div>
             </div>
 
             <div class="mb-6 p-4 bg-gray-900 border border-gray-700 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -119,6 +126,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             const runBtn = document.getElementById('runBtn');
             const seedBtn = document.getElementById('seedBtn');
             const apiKeyInput = document.getElementById('apiKey');
+            const shopNameInput = document.getElementById('shopName');
             const sqlInput = document.getElementById('sqlQuery');
             const statusText = document.getElementById('statusText');
             const errorText = document.getElementById('errorText');
@@ -134,27 +142,29 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             const mm = String(today.getMonth() + 1).padStart(2, '0'); 
             const dd = String(today.getDate()).padStart(2, '0');
             
-            // Default query
-            sqlInput.value = `SELECT event_type, COUNT(*) as count FROM website_analytics.events WHERE year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY event_type`;
+            // Default query (Now includes shop filter)
+            sqlInput.value = `SELECT event_type, COUNT(*) as count FROM website_analytics.events WHERE shop='your_shop_name' AND year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY event_type`;
 
-            // 🛠️ NEW: QUERY TEMPLATE LOGIC
-            const templates = {
-                views: `SELECT page_url, COUNT(*) as total_views FROM website_analytics.events WHERE event_type = 'page_view' AND year='${yyyy}' AND month='${mm}' GROUP BY page_url ORDER BY total_views DESC LIMIT 10;`,
-                cart: `SELECT COUNT(DISTINCT CASE WHEN event_type = 'add_to_cart' THEN session_id END) as carts_started, COUNT(DISTINCT CASE WHEN event_type = 'checkout_start' THEN session_id END) as checkouts_started, COUNT(DISTINCT CASE WHEN event_type = 'purchase' THEN session_id END) as purchases_made FROM website_analytics.events WHERE year='${yyyy}' AND month='${mm}';`,
-                revenue: `SELECT SUM(revenue) as total_revenue, COUNT(DISTINCT order_id) as total_orders FROM website_analytics.events WHERE event_type = 'purchase' AND year='${yyyy}' AND month='${mm}' AND day='${dd}';`
-            };
-
+            // 🛠️ NEW: QUERY TEMPLATE LOGIC (Dynamic Shop Injection)
             document.querySelectorAll('.template-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const templateType = e.target.getAttribute('data-template');
-                    if (templates[templateType]) {
-                        sqlInput.value = templates[templateType];
-                        
-                        // Optional visual feedback
-                        const originalText = e.target.innerText;
-                        e.target.innerText = "✅ Loaded!";
-                        setTimeout(() => e.target.innerText = originalText, 1500);
+                    let currentShop = shopNameInput.value.trim().toLowerCase() || 'your_shop_name';
+                    
+                    let query = "";
+                    if (templateType === 'views') {
+                        query = `SELECT page_url, COUNT(*) as total_views FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'page_view' AND year='${yyyy}' AND month='${mm}' GROUP BY page_url ORDER BY total_views DESC LIMIT 10;`;
+                    } else if (templateType === 'cart') {
+                        query = `SELECT COUNT(DISTINCT CASE WHEN event_type = 'add_to_cart' THEN session_id END) as carts_started, COUNT(DISTINCT CASE WHEN event_type = 'checkout_start' THEN session_id END) as checkouts_started, COUNT(DISTINCT CASE WHEN event_type = 'purchase' THEN session_id END) as purchases_made FROM website_analytics.events WHERE shop='${currentShop}' AND year='${yyyy}' AND month='${mm}';`;
+                    } else if (templateType === 'revenue') {
+                        query = `SELECT SUM(revenue) as total_revenue, COUNT(DISTINCT order_id) as total_orders FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'purchase' AND year='${yyyy}' AND month='${mm}' AND day='${dd}';`;
                     }
+                    
+                    sqlInput.value = query;
+                    
+                    const originalText = e.target.innerText;
+                    e.target.innerText = "✅ Loaded!";
+                    setTimeout(() => e.target.innerText = originalText, 1500);
                 });
             });
 
