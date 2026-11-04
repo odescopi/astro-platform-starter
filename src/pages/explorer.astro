@@ -58,7 +58,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             <div class="mb-6 p-4 bg-gray-900 border border-gray-700 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h3 class="font-bold text-white">Need test data?</h3>
-                    <p class="text-xs text-gray-400">Send 20 fake events to your account to see how the explorer works.</p>
+                    <p class="text-xs text-gray-400">Send a realistic mix of 20 events (views, carts, purchases) to test all templates.</p>
                 </div>
                 <button id="seedBtn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded text-sm transition-colors whitespace-nowrap">
                     ✨ Send Test Data
@@ -78,7 +78,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     <button class="template-btn bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors" data-template="revenue">
                         💰 Revenue Today
                     </button>
-                    <!-- 🛠️ NEW TEMPLATE FOR TESTING -->
                     <button class="template-btn bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors" data-template="video">
                         🎥 Video Views
                     </button>
@@ -165,8 +164,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     }
                     
                     sqlInput.value = query;
-                    
-                    // 🛠️ Instantly run the query
                     runBtn.click();
                 });
             });
@@ -182,16 +179,25 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 const fakeUserId = "user_" + Date.now(); 
                 let successCount = 0;
 
+                // 🛠️ CPO FIX: Generate a realistic mix of events
+                const eventTypes = ["page_view", "page_view", "video_watched", "add_to_cart", "purchase"];
+
                 for (let i = 0; i < 20; i++) {
+                    const type = eventTypes[i % eventTypes.length];
+                    
                     const payload = {
                         version: "1.0",
                         event_id: "evt_" + Date.now() + "_" + i,
-                        event_type: "video_watched",
+                        event_type: type,
                         event_time: new Date().toISOString(),
                         source: "sandbox",
                         user: { anonymous_id: fakeUserId },
                         session: { session_id: "sess_" + Date.now() },
-                        page: { url: "https://demo-store.com" }
+                        page: { url: "https://demo-store.com/products/" + type },
+                        // Add revenue data for purchase events
+                        revenue: type === "purchase" ? 99.99 : 0.0,
+                        order_id: type === "purchase" ? "ord_" + Date.now() : "",
+                        product_id: "prod_123"
                     };
 
                     try {
