@@ -57,6 +57,22 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     ✨ Send Test Data
                 </button>
             </div>
+
+            <!-- 🛠️ NEW: QUERY TEMPLATES -->
+            <div class="mb-4">
+                <label class="block text-sm font-bold mb-2 text-gray-300">Quick Templates</label>
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <button class="template-btn bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors" data-template="views">
+                        📊 Total Page Views
+                    </button>
+                    <button class="template-btn bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors" data-template="cart">
+                        🛒 Cart Abandonment
+                    </button>
+                    <button class="template-btn bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors" data-template="revenue">
+                        💰 Revenue Today
+                    </button>
+                </div>
+            </div>
             
             <div class="mb-4">
                 <label class="block text-sm font-bold mb-2 text-gray-300">SQL Query</label>
@@ -118,7 +134,29 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             const mm = String(today.getMonth() + 1).padStart(2, '0'); 
             const dd = String(today.getDate()).padStart(2, '0');
             
+            // Default query
             sqlInput.value = `SELECT event_type, COUNT(*) as count FROM website_analytics.events WHERE year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY event_type`;
+
+            // 🛠️ NEW: QUERY TEMPLATE LOGIC
+            const templates = {
+                views: `SELECT page_url, COUNT(*) as total_views FROM website_analytics.events WHERE event_type = 'page_view' AND year='${yyyy}' AND month='${mm}' GROUP BY page_url ORDER BY total_views DESC LIMIT 10;`,
+                cart: `SELECT COUNT(DISTINCT CASE WHEN event_type = 'add_to_cart' THEN session_id END) as carts_started, COUNT(DISTINCT CASE WHEN event_type = 'checkout_start' THEN session_id END) as checkouts_started, COUNT(DISTINCT CASE WHEN event_type = 'purchase' THEN session_id END) as purchases_made FROM website_analytics.events WHERE year='${yyyy}' AND month='${mm}';`,
+                revenue: `SELECT SUM(revenue) as total_revenue, COUNT(DISTINCT order_id) as total_orders FROM website_analytics.events WHERE event_type = 'purchase' AND year='${yyyy}' AND month='${mm}' AND day='${dd}';`
+            };
+
+            document.querySelectorAll('.template-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const templateType = e.target.getAttribute('data-template');
+                    if (templates[templateType]) {
+                        sqlInput.value = templates[templateType];
+                        
+                        // Optional visual feedback
+                        const originalText = e.target.innerText;
+                        e.target.innerText = "✅ Loaded!";
+                        setTimeout(() => e.target.innerText = originalText, 1500);
+                    }
+                });
+            });
 
             seedBtn.addEventListener('click', async () => {
                 const apiKey = apiKeyInput.value.trim();
@@ -168,7 +206,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             runBtn.addEventListener('click', async () => {
                 const apiKey = apiKeyInput.value.trim();
                 const sql = sqlInput.value.trim();
-                if (!apiKey) { errorText.innerText = "Please enter your API key."; return; }
+                if (!apiKey) { errorText.innerText = "Please enter an API key."; return; }
 
                 errorText.innerText = "";
                 resultsContainer.classList.add('hidden');
