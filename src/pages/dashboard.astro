@@ -48,10 +48,8 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             <p class="text-gray-400">Welcome back, <span id="userFirstName" class="text-white font-bold">User</span>!</p>
         </div>
 
-        <!-- 🛠️ PAYWALL BANNER -->
-        <div id="upgradeBanner" class="bg-red-500/10 border border-red-500/50 rounded-xl p-6 mb-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hidden">
-            <!-- Content is injected dynamically by JS -->
-        </div>
+        <!-- 🛠️ PAYWALL BANNER (Injected by JS) -->
+        <div id="upgradeBanner" class="bg-red-500/10 border border-red-500/50 rounded-xl p-6 mb-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hidden"></div>
 
         <!-- 🛠️ USAGE PROGRESS BAR -->
         <div id="usageCard" class="bg-gray-800 p-8 rounded-xl border border-gray-700 shadow-xl mb-10 hidden">
@@ -159,9 +157,22 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
         </div>
     </div>
 
-    <script is:inline define:vars={{ API_URL }}>
+    <script is:inline define:vars={{ API_URL, COGNITO_ID, COGNITO_DOMAIN }}>
         const API_ENDPOINT = `${API_URL}/v1/auth/generate`;
+        const REDIRECT_URI = "https://getinsightstream.com/dashboard";
         let keyToRevoke = null;
+
+        // 🛠️ GLOBAL HELPER FOR SESSION EXPIRY
+        window.handleExpiredSession = function(errorBox) {
+            errorBox.innerText = "Your session expired. Redirecting to login...";
+            errorBox.classList.remove('hidden');
+            localStorage.removeItem('cognito_id_token');
+            
+            setTimeout(() => {
+                const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+                window.location.href = loginUrl;
+            }, 1500);
+        };
 
         window.copyToClipboard = function(elementId, btn) {
             const text = document.getElementById(elementId).innerText;
@@ -250,6 +261,12 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }
                     });
                     
+                    // 🛠️ HANDLE EXPIRED TOKEN ON LOAD
+                    if (response.status === 401) {
+                        window.handleExpiredSession(document.getElementById('error-box'));
+                        return;
+                    }
+
                     const data = await response.json();
                     keysTableBody.innerHTML = "";
                     mobileKeysContainer.innerHTML = "";
@@ -257,9 +274,8 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     if (data.success && data.keys.length > 0) {
                         noKeys.classList.add('hidden');
                         
-                        // Calculate total usage across all keys
                         let totalUsage = 0;
-                        let highestLimit = 10000; // Default Free Limit
+                        let highestLimit = 10000; 
                         let currentPlan = 'free';
 
                         data.keys.forEach((key, index) => {
@@ -319,7 +335,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         
                         usageBar.style.width = `${percentage}%`;
                         
-                        // Change color based on usage
                         if (percentage >= 100) {
                             usageBar.className = "bg-red-500 h-3 rounded-full transition-all duration-500";
                         } else if (percentage > 90) {
@@ -332,7 +347,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 
                         // 🛠️ UPDATE BANNER STATE (3 Levels)
                         if (currentPlan === 'free' && totalUsage >= 10000) {
-                            // Level 3: API is now PAUSED
                             upgradeBanner.classList.remove('hidden');
                             upgradeBanner.innerHTML = `
                                 <div>
@@ -344,7 +358,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                                 </a>
                             `;
                         } else if (currentPlan === 'free' && totalUsage >= 9000) {
-                            // Level 2: Warning
                             upgradeBanner.classList.remove('hidden');
                             upgradeBanner.innerHTML = `
                                 <div>
@@ -397,6 +410,12 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         body: JSON.stringify({ shop_domain: shopName })
                     });
 
+                    // 🛠️ HANDLE EXPIRED TOKEN ON GENERATE
+                    if (response.status === 401) {
+                        window.handleExpiredSession(errorBox);
+                        return;
+                    }
+
                     const data = await response.json();
 
                     if (data.success) {
@@ -405,7 +424,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         input.value = ""; 
                         setTimeout(() => loadKeys(), 500); 
                     } else {
-                        throw new Error(data.error);
+                        throw new Error(data.error || "Failed to generate key.");
                     }
                 } catch (err) {
                     errorBox.innerText = "Error: " + err.message;
