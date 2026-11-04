@@ -43,7 +43,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 
         <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 mb-6 shadow-xl">
             
-            <!-- 🛠️ NEW: SHOP AND API KEY INPUTS -->
+            <!-- 🛠️ SHOP AND API KEY INPUTS -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
                     <label class="block text-sm font-bold mb-2 text-gray-300">API Key</label>
@@ -65,7 +65,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 </button>
             </div>
 
-            <!-- 🛠️ NEW: QUERY TEMPLATES -->
+            <!-- 🛠️ QUERY TEMPLATES -->
             <div class="mb-4">
                 <label class="block text-sm font-bold mb-2 text-gray-300">Quick Templates</label>
                 <div class="flex flex-wrap gap-2 mb-4">
@@ -142,10 +142,10 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             const mm = String(today.getMonth() + 1).padStart(2, '0'); 
             const dd = String(today.getDate()).padStart(2, '0');
             
-            // Default query (Now includes shop filter)
+            // Default query
             sqlInput.value = `SELECT event_type, COUNT(*) as count FROM website_analytics.events WHERE shop='your_shop_name' AND year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY event_type`;
 
-            // 🛠️ NEW: QUERY TEMPLATE LOGIC (Dynamic Shop Injection)
+            // 🛠️ QUERY TEMPLATE LOGIC (Dynamic Shop Injection)
             document.querySelectorAll('.template-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const templateType = e.target.getAttribute('data-template');
@@ -177,6 +177,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 errorText.innerText = "";
                 
                 const fakeUserId = "user_" + Date.now(); 
+                let successCount = 0;
 
                 for (let i = 0; i < 20; i++) {
                     const payload = {
@@ -191,26 +192,38 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     };
 
                     try {
-                        await fetch(INGEST_ENDPOINT, {
+                        const res = await fetch(INGEST_ENDPOINT, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
                             body: JSON.stringify(payload)
                         });
-                    } catch (e) {}
+                        
+                        const data = await res.json();
+                        if (res.ok) {
+                            successCount++;
+                        } else {
+                            // If the API rejects the key, we stop immediately and show the error
+                            errorText.innerText = "API Rejected the key: " + (data.error || "Unknown error");
+                            seedBtn.innerText = "❌ Failed";
+                            seedBtn.disabled = false;
+                            return;
+                        }
+                    } catch (e) {
+                        console.error("Fetch error:", e);
+                    }
                     await new Promise(resolve => setTimeout(resolve, 50)); 
                 }
 
-                seedBtn.innerText = "✅ Sent! Waiting for pipeline...";
+                seedBtn.innerText = `✅ Sent ${successCount} events! Waiting...`;
                 liveIndicator.classList.remove('hidden');
                 
-                setTimeout(() => runBtn.click(), 4000);
-                setTimeout(() => runBtn.click(), 8000);
+                // Wait 5 seconds, then auto-run the query
                 setTimeout(() => {
                     runBtn.click();
                     liveIndicator.classList.add('hidden');
                     seedBtn.innerText = "✨ Send Test Data";
                     seedBtn.disabled = false;
-                }, 12000);
+                }, 5000);
             });
 
             runBtn.addEventListener('click', async () => {
