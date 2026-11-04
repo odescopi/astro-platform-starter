@@ -143,10 +143,10 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             const mm = String(today.getMonth() + 1).padStart(2, '0'); 
             const dd = String(today.getDate()).padStart(2, '0');
             
-            // 🛠️ STANDARDIZED DEFAULT QUERY
-            sqlInput.value = `SELECT shop, event_type, COUNT(*) as count FROM website_analytics.events WHERE shop='your_shop_name' AND year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY shop, event_type`;
+            // 🛠️ STANDARDIZED DEFAULT QUERY (Fully qualified)
+            sqlInput.value = `SELECT website_analytics.events.shop, event_type, COUNT(*) as count FROM website_analytics.events WHERE website_analytics.events.shop='your_shop_name' AND year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY website_analytics.events.shop, event_type`;
 
-            // 🛠️ QUERY TEMPLATE LOGIC (Auto-runs the query on click)
+            // 🛠️ QUERY TEMPLATE LOGIC
             document.querySelectorAll('.template-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const templateType = e.target.getAttribute('data-template');
@@ -154,15 +154,14 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     
                     let query = "";
                     if (templateType === 'views') {
-                        query = `SELECT shop, page_url, COUNT(*) as total_views FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'page_view' AND year='${yyyy}' AND month='${mm}' GROUP BY shop, page_url ORDER BY total_views DESC LIMIT 10;`;
+                        query = `SELECT website_analytics.events.shop, page_url, COUNT(*) as total_views FROM website_analytics.events WHERE website_analytics.events.shop='${currentShop}' AND event_type = 'page_view' AND year='${yyyy}' AND month='${mm}' GROUP BY website_analytics.events.shop, page_url ORDER BY total_views DESC LIMIT 10;`;
                     } else if (templateType === 'cart') {
-                        query = `SELECT shop, event_type, COUNT(DISTINCT session_id) as unique_sessions FROM website_analytics.events WHERE shop='${currentShop}' AND event_type IN ('add_to_cart', 'checkout_start', 'purchase') AND year='${yyyy}' AND month='${mm}' GROUP BY shop, event_type;`;
+                        query = `SELECT website_analytics.events.shop, event_type, COUNT(DISTINCT session_id) as unique_sessions FROM website_analytics.events WHERE website_analytics.events.shop='${currentShop}' AND event_type IN ('add_to_cart', 'checkout_start', 'purchase') AND year='${yyyy}' AND month='${mm}' GROUP BY website_analytics.events.shop, event_type;`;
                     } else if (templateType === 'revenue') {
-                        // 🛠️ FIXED: Added GROUP BY shop to resolve Athena partition bug
-                        query = `SELECT shop, SUM(COALESCE(revenue, 0)) as total_revenue, COUNT(DISTINCT order_id) as total_orders FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'purchase' AND year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY shop;`;
+                        // 🛠️ FIXED: Fully qualified table.shop
+                        query = `SELECT website_analytics.events.shop, SUM(COALESCE(revenue, 0)) as total_revenue, COUNT(DISTINCT order_id) as total_orders FROM website_analytics.events WHERE website_analytics.events.shop='${currentShop}' AND event_type = 'purchase' AND year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY website_analytics.events.shop;`;
                     } else if (templateType === 'video') {
-                        // 🛠️ STANDARDIZED
-                        query = `SELECT shop, event_type, COUNT(*) as total_events FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'video_watched' GROUP BY shop, event_type;`;
+                        query = `SELECT website_analytics.events.shop, event_type, COUNT(*) as total_events FROM website_analytics.events WHERE website_analytics.events.shop='${currentShop}' AND event_type = 'video_watched' GROUP BY website_analytics.events.shop, event_type;`;
                     }
                     
                     sqlInput.value = query;
