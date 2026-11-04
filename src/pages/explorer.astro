@@ -78,6 +78,10 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     <button class="template-btn bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors" data-template="revenue">
                         💰 Revenue Today
                     </button>
+                    <!-- 🛠️ NEW TEMPLATE FOR TESTING -->
+                    <button class="template-btn bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors" data-template="video">
+                        🎥 Video Views
+                    </button>
                 </div>
             </div>
             
@@ -101,7 +105,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 <span>Query Results</span>
                 <div class="flex items-center gap-4">
                     <span id="liveIndicator" class="text-green-400 hidden animate-pulse">● Live Updating...</span>
-                    <!-- THE DOWNLOAD BUTTON -->
                     <button id="downloadCsvBtn" class="hidden bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1 px-3 rounded transition-colors">
                         ⬇ Download CSV
                     </button>
@@ -142,10 +145,9 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             const mm = String(today.getMonth() + 1).padStart(2, '0'); 
             const dd = String(today.getDate()).padStart(2, '0');
             
-            // Default query
             sqlInput.value = `SELECT event_type, COUNT(*) as count FROM website_analytics.events WHERE shop='your_shop_name' AND year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY event_type`;
 
-            // 🛠️ QUERY TEMPLATE LOGIC (Dynamic Shop Injection)
+            // 🛠️ QUERY TEMPLATE LOGIC (Auto-runs the query on click)
             document.querySelectorAll('.template-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const templateType = e.target.getAttribute('data-template');
@@ -158,13 +160,14 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         query = `SELECT COUNT(DISTINCT CASE WHEN event_type = 'add_to_cart' THEN session_id END) as carts_started, COUNT(DISTINCT CASE WHEN event_type = 'checkout_start' THEN session_id END) as checkouts_started, COUNT(DISTINCT CASE WHEN event_type = 'purchase' THEN session_id END) as purchases_made FROM website_analytics.events WHERE shop='${currentShop}' AND year='${yyyy}' AND month='${mm}';`;
                     } else if (templateType === 'revenue') {
                         query = `SELECT SUM(revenue) as total_revenue, COUNT(DISTINCT order_id) as total_orders FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'purchase' AND year='${yyyy}' AND month='${mm}' AND day='${dd}';`;
+                    } else if (templateType === 'video') {
+                        query = `SELECT event_type, COUNT(*) as total_events FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'video_watched' GROUP BY event_type;`;
                     }
                     
                     sqlInput.value = query;
                     
-                    const originalText = e.target.innerText;
-                    e.target.innerText = "✅ Loaded!";
-                    setTimeout(() => e.target.innerText = originalText, 1500);
+                    // 🛠️ Instantly run the query
+                    runBtn.click();
                 });
             });
 
@@ -202,22 +205,18 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         if (res.ok) {
                             successCount++;
                         } else {
-                            // If the API rejects the key, we stop immediately and show the error
                             errorText.innerText = "API Rejected the key: " + (data.error || "Unknown error");
                             seedBtn.innerText = "❌ Failed";
                             seedBtn.disabled = false;
                             return;
                         }
-                    } catch (e) {
-                        console.error("Fetch error:", e);
-                    }
+                    } catch (e) {}
                     await new Promise(resolve => setTimeout(resolve, 50)); 
                 }
 
                 seedBtn.innerText = `✅ Sent ${successCount} events! Waiting...`;
                 liveIndicator.classList.remove('hidden');
                 
-                // Wait 5 seconds, then auto-run the query
                 setTimeout(() => {
                     runBtn.click();
                     liveIndicator.classList.add('hidden');
@@ -250,7 +249,8 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     let queryId = data.query_id;
 
                     while (data.status === 'STARTED' || data.status === 'RUNNING' || data.status === 'QUEUED') {
-                        await new Promise(r => setTimeout(r, 2000));
+                        // 🛠️ FASTER POLLING: Changed from 2000ms to 500ms
+                        await new Promise(r => setTimeout(r, 500));
                         response = await fetch(QUERY_ENDPOINT, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
@@ -282,7 +282,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 
                 if (csvUrl) {
                     downloadCsvBtn.classList.remove('hidden');
-                    
                     downloadCsvBtn.onclick = async (e) => {
                         e.preventDefault();
                         const originalText = downloadCsvBtn.innerText;
@@ -291,23 +290,17 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         
                         try {
                             const response = await fetch(csvUrl);
-                            if (!response.ok) throw new Error("Network response was not ok");
-                            
                             const blob = await response.blob();
                             const url = window.URL.createObjectURL(blob);
-                            
                             const a = document.createElement('a');
                             a.style.display = 'none';
                             a.href = url;
                             a.download = `getinsightstream-export-${Date.now()}.csv`;
                             document.body.appendChild(a);
                             a.click();
-                            
                             window.URL.revokeObjectURL(url);
                             downloadCsvBtn.innerText = "✅ Downloaded!";
-                            
                         } catch (err) {
-                            console.error("Fetch failed", err);
                             downloadCsvBtn.innerText = "❌ Failed";
                         } finally {
                             setTimeout(() => {
