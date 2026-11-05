@@ -141,7 +141,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
     <!-- 🛠️ NEW: ONBOARDING MODAL -->
     <div id="onboardingModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden transition-opacity duration-300">
         <div class="bg-gray-800 border border-gray-700 rounded-2xl p-8 max-w-lg w-full mx-4 shadow-2xl relative overflow-hidden">
-            <!-- Background Glow -->
             <div class="absolute -top-20 -right-20 w-40 h-40 bg-red-500 rounded-full blur-3xl opacity-20"></div>
             
             <div class="relative z-10">
@@ -149,7 +148,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 <p class="text-gray-400 mb-6 text-sm">Let's get your store connected in 3 simple steps.</p>
                 
                 <div class="space-y-6 mb-8">
-                    <!-- Step 1 -->
                     <div class="flex gap-4">
                         <div class="bg-gray-900 border border-gray-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">1</div>
                         <div>
@@ -157,7 +155,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                             <p class="text-gray-400 text-xs">Scroll down and enter your shop name to generate a secure API key.</p>
                         </div>
                     </div>
-                    <!-- Step 2 -->
                     <div class="flex gap-4">
                         <div class="bg-gray-900 border border-gray-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">2</div>
                         <div>
@@ -165,7 +162,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                             <p class="text-gray-400 text-xs">Go to your Shopify Theme Editor and paste the provided snippet into your <code class="text-red-400 bg-gray-900 px-1 rounded">theme.liquid</code> file.</p>
                         </div>
                     </div>
-                    <!-- Step 3 -->
                     <div class="flex gap-4">
                         <div class="bg-gray-900 border border-gray-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">3</div>
                         <div>
@@ -206,7 +202,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
         const REDIRECT_URI = "https://getinsightstream.com/dashboard";
         let keyToRevoke = null;
 
-        // 🛠️ GLOBAL HELPER FOR SESSION EXPIRY
         window.handleExpiredSession = function(errorBox) {
             errorBox.innerText = "Your session expired. Redirecting to login...";
             errorBox.classList.remove('hidden');
@@ -259,7 +254,22 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 window.location.reload();
             }
 
-            // 🛠️ NEW: Onboarding Modal Logic
+            // 🛠️ Hide/Show Keys Logic
+            const toggleTableBtn = document.getElementById('toggleTableBtn');
+            const tableContainer = document.getElementById('tableContainer');
+            let keysVisible = true;
+
+            toggleTableBtn.addEventListener('click', () => {
+                keysVisible = !keysVisible;
+                if (keysVisible) {
+                    tableContainer.style.display = 'block';
+                    toggleTableBtn.innerText = 'Hide Keys';
+                } else {
+                    tableContainer.style.display = 'none';
+                    toggleTableBtn.innerText = 'Show Keys';
+                }
+            });
+
             const onboardingModal = document.getElementById('onboardingModal');
             const closeOnboardingBtn = document.getElementById('closeOnboardingBtn');
             
@@ -271,14 +281,12 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             const mobileKeysContainer = document.getElementById('mobileKeysContainer');
             const noKeys = document.getElementById('noKeys');
             
-            // Paywall Elements
             const usageCard = document.getElementById('usageCard');
             const usageText = document.getElementById('usageText');
             const limitText = document.getElementById('limitText');
             const usageBar = document.getElementById('usageBar');
             const upgradeBanner = document.getElementById('upgradeBanner');
 
-            // Modal Elements
             const warningModal = document.getElementById('warningModal');
             const cancelRevokeBtn = document.getElementById('cancelRevokeBtn');
             const confirmRevokeBtn = document.getElementById('confirmRevokeBtn');
@@ -305,7 +313,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 }
             });
 
-            // FETCH EXISTING KEYS & UPDATE USAGE BAR
             async function loadKeys() {
                 try {
                     const response = await fetch(API_ENDPOINT, {
@@ -313,7 +320,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }
                     });
                     
-                    // 🛠️ HANDLE EXPIRED TOKEN ON LOAD
                     if (response.status === 401) {
                         window.handleExpiredSession(document.getElementById('error-box'));
                         return;
@@ -352,7 +358,10 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                                     <span class="px-2 py-1 rounded text-xs font-bold uppercase tracking-wide ${key.plan === 'pro' ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-300'}">${key.plan}</span>
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <button onclick="openRevokeModal('${key.api_key}')" class="bg-red-900/50 hover:bg-red-800 text-red-300 text-xs font-bold py-1 px-2 rounded transition-colors flex-shrink-0 ml-auto">Revoke</button>
+                                    <div class="flex items-center justify-end gap-2">
+                                        <a href="/explorer?key=${key.api_key}&shop=${key.shop_domain}" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-2 rounded transition-colors flex-shrink-0">📊 Explore</a>
+                                        <button onclick="openRevokeModal('${key.api_key}')" class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-1 px-2 rounded transition-colors flex-shrink-0">Revoke</button>
+                                    </div>
                                 </td>
                             `;
                             keysTableBody.appendChild(tr);
@@ -370,14 +379,14 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                                     <p id="m-key-${index}" class="font-mono text-green-400 text-sm break-all">${key.api_key}</p>
                                 </div>
                                 <div class="flex gap-2">
-                                    <button onclick="copyToClipboard('m-key-${index}', this)" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 rounded transition-colors">Copy Key</button>
-                                    <button onclick="openRevokeModal('${key.api_key}')" class="flex-1 bg-red-900/50 hover:bg-red-800 text-red-300 text-xs font-bold py-2 rounded transition-colors">Revoke</button>
+                                    <a href="/explorer?key=${key.api_key}&shop=${key.shop_domain}" class="flex-1 bg-red-500 hover:bg-red-600 text-center text-white text-xs font-bold py-2 rounded transition-colors">📊 Explore</a>
+                                    <button onclick="copyToClipboard('m-key-${index}', this)" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 rounded transition-colors">Copy</button>
+                                    <button onclick="openRevokeModal('${key.api_key}')" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 rounded transition-colors">Revoke</button>
                                 </div>
                             `;
                             mobileKeysContainer.appendChild(card);
                         });
 
-                        // 🛠️ UPDATE PAYWALL UI
                         usageCard.classList.remove('hidden');
                         usageText.innerText = totalUsage.toLocaleString();
                         limitText.innerText = `/ ${highestLimit.toLocaleString()}`;
@@ -397,7 +406,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                             usageBar.className = "bg-green-500 h-3 rounded-full transition-all duration-500";
                         }
 
-                        // 🛠️ UPDATE BANNER STATE (3 Levels)
                         if (currentPlan === 'free' && totalUsage >= 10000) {
                             upgradeBanner.classList.remove('hidden');
                             upgradeBanner.innerHTML = `
@@ -423,7 +431,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         }
 
                     } else {
-                        // 🛠️ NEW: TRIGGER ONBOARDING MODAL IF NO KEYS
                         noKeys.classList.remove('hidden');
                         usageCard.classList.add('hidden');
                         
@@ -439,7 +446,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 
             loadKeys(); 
 
-            // Generate Key Logic
             const btn = document.getElementById('genBtn');
             const input = document.getElementById('shopName');
             const result = document.getElementById('result');
@@ -468,7 +474,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         body: JSON.stringify({ shop_domain: shopName })
                     });
 
-                    // 🛠️ HANDLE EXPIRED TOKEN ON GENERATE
                     if (response.status === 401) {
                         window.handleExpiredSession(errorBox);
                         return;
