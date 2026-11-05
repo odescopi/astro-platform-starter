@@ -21,6 +21,7 @@ import Layout from '../layouts/Layout.astro';
 
             <div class="flex-grow space-y-12">
                 
+                <!-- Quickstart -->
                 <section id="quickstart" class="scroll-mt-12">
                     <h2 class="text-2xl font-bold text-white mb-4">Quickstart Guide</h2>
                     <p class="text-gray-300 mb-4">Get up and running in under 5 minutes.</p>
@@ -33,11 +34,12 @@ import Layout from '../layouts/Layout.astro';
                         
                         <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
                             <h3 class="text-lg font-bold text-white mb-2">2. Install the Snippet (Shopify)</h3>
-                            <p class="text-gray-400 text-sm mb-4">Copy the snippet from your dashboard. In Shopify, go to <strong>Online Store -> Themes -> Edit Code</strong>. Open <code class="bg-gray-900 px-1 py-0.5 rounded text-red-400">theme.liquid</code> and paste the snippet right before the closing <code class="bg-gray-900 px-1 py-0.5 rounded text-red-400">&lt;/head&gt;</code> tag.</p>
+                            <p class="text-gray-400 text-sm mb-4">Copy the snippet from your dashboard. In Shopify, go to <strong>Online Store &gt; Themes &gt; Edit Code</strong>. Open <code class="bg-gray-900 px-1 py-0.5 rounded text-red-400">theme.liquid</code> and paste the snippet right before the closing <code class="bg-gray-900 px-1 py-0.5 rounded text-red-400">&lt;/head&gt;</code> tag.</p>
                         </div>
                     </div>
                 </section>
 
+                <!-- API Reference -->
                 <section id="api-reference" class="scroll-mt-12">
                     <h2 class="text-2xl font-bold text-white mb-4">API Reference</h2>
                     <p class="text-gray-300 mb-4">If you are not using Shopify, you can send events directly to our REST API.</p>
@@ -49,22 +51,14 @@ import Layout from '../layouts/Layout.astro';
                         </div>
                         <div class="p-4">
                             <p class="text-sm text-gray-400 mb-4">Send an event via cURL:</p>
-                            <pre class="bg-gray-950 p-4 rounded text-sm font-mono text-gray-300 overflow-x-auto">curl -X POST https://m01abirupj.execute-api.us-east-1.amazonaws.com/v1/events \
--H "Content-Type: application/json" \
--H "x-api-key: YOUR_API_KEY" \
--d '{
-  "version": "1.0",
-  "event_id": "evt_123456",
-  "event_type": "product_view",
-  "event_time": "2024-05-20T12:00:00Z",
-  "source": "custom_app",
-  "user": { "anonymous_id": "user_abc" },
-  "page": { "url": "https://mystore.com/products/tshirt" }
-}'</pre>
+                            <div class="relative">
+                                <pre id="curlSnippet" class="bg-gray-950 p-4 rounded text-sm font-mono text-gray-300 overflow-x-auto whitespace-pre"></pre>
+                            </div>
                         </div>
                     </div>
                 </section>
 
+                <!-- Event Schema -->
                 <section id="schema" class="scroll-mt-12">
                     <h2 class="text-2xl font-bold text-white mb-4">Event Schema</h2>
                     <p class="text-gray-300 mb-4">The standard payload structure for all events.</p>
@@ -102,4 +96,27 @@ import Layout from '../layouts/Layout.astro';
             </div>
         </div>
     </div>
+
+    <!-- 🛠️ THE ASTRO COMPILER FIX: Injecting code via JavaScript -->
+    <script is:inline>
+        document.addEventListener("DOMContentLoaded", () => {
+            const curlSnippet = document.getElementById('curlSnippet');
+            if (curlSnippet) {
+                let code = "curl -X POST https://m01abirupj.execute-api.us-east-1.amazonaws.com/v1/events \\\n";
+                code += '-H "Content-Type: application/json" \\\n';
+                code += '-H "x-api-key: YOUR_API_KEY" \\\n';
+                code += "-d '{\n";
+                code += '  "version": "1.0",\n';
+                code += '  "event_id": "evt_123456",\n';
+                code += '  "event_type": "product_view",\n';
+                code += '  "event_time": "2024-05-20T12:00:00Z",\n';
+                code += '  "source": "custom_app",\n';
+                code += '  "user": { "anonymous_id": "user_abc" },\n';
+                code += '  "page": { "url": "https://mystore.com/products/tshirt" }\n';
+                code += "}'";
+                
+                curlSnippet.textContent = code;
+            }
+        });
+    </script>
 </Layout>
