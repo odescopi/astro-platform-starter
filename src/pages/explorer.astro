@@ -8,20 +8,17 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 
 <Layout title="GetInsightStream - SQL Explorer">
     
-    <!-- 🛠️ THE ZERO-FLASH FIX -->
     <script is:inline define:vars={{ COGNITO_ID, COGNITO_DOMAIN }}>
         (function() {
             const REDIRECT_URI = "https://getinsightstream.com/explorer";
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
             let idToken = hashParams.get('id_token');
-            
             if (idToken) {
                 localStorage.setItem('cognito_id_token', idToken);
                 window.history.replaceState({}, document.title, window.location.pathname);
             } else {
                 idToken = localStorage.getItem('cognito_id_token');
             }
-
             if (!idToken) {
                 document.documentElement.style.visibility = 'hidden';
                 const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
@@ -39,9 +36,17 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             <p class="text-gray-400">Run analytical queries against your event data.</p>
         </div>
 
+        <!-- 🛠️ ACTIVE CONNECTION BANNER (Shows when coming from Dashboard) -->
+        <div id="activeConnectionBanner" class="bg-green-900/20 border border-green-500/30 rounded-xl p-4 mb-6 hidden flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+                <p class="text-sm text-green-400 font-bold mb-1">✅ Active Connection</p>
+                <p class="text-xs text-gray-400">Connected to <strong id="activeShopDisplay" class="text-white"></strong> with key ending in <strong id="activeKeyDisplay" class="text-white"></strong></p>
+            </div>
+        </div>
+
         <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 mb-6 shadow-xl">
             
-            <!-- 🛠️ CREDENTIALS (Hidden if auto-filled from Dashboard) -->
+            <!-- 🛠️ MANUAL CREDENTIALS (Only shows if not from Dashboard) -->
             <div id="credentials-section" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
                     <label class="block text-sm font-bold mb-2 text-gray-300">API Key</label>
@@ -63,7 +68,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 </button>
             </div>
 
-            <!-- 🛠️ QUERY TEMPLATES (Clean, Standard SQL) -->
             <div class="mb-4">
                 <label class="block text-sm font-bold mb-2 text-gray-300">Quick Templates</label>
                 <div class="flex flex-wrap gap-2 mb-4">
@@ -140,23 +144,28 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             const liveIndicator = document.getElementById('liveIndicator');
             const downloadCsvBtn = document.getElementById('downloadCsvBtn');
 
-            // 🛠️ AUTO-FILL FROM URL (The "Aha!" Moment)
             const urlParams = new URLSearchParams(window.location.search);
             const urlKey = urlParams.get('key');
             const urlShop = urlParams.get('shop');
 
-            if (urlKey) apiKeyInput.value = urlKey;
-            if (urlShop) shopNameInput.value = urlShop;
-
-            // Hide inputs if coming from Dashboard
+            // 🛠️ UI FIX: Show Active Connection Banner, Hide Inputs
             if (urlKey && urlShop) {
+                apiKeyInput.value = urlKey;
+                shopNameInput.value = urlShop;
+                
                 document.getElementById('credentials-section').classList.add('hidden');
+                
+                const banner = document.getElementById('activeConnectionBanner');
+                banner.classList.remove('hidden');
+                banner.classList.add('flex');
+                
+                document.getElementById('activeShopDisplay').innerText = urlShop;
+                document.getElementById('activeKeyDisplay').innerText = '...' + urlKey.slice(-4);
             }
 
-            // 🛠️ DEFAULT CUSTOM QUERY (No placeholders)
+            // 🛠️ DEFAULT CUSTOM QUERY
             sqlInput.value = `SELECT * FROM website_analytics.events LIMIT 10`;
 
-            // 🛠️ STANDARD TEMPLATE LOGIC (No hardcoded dates - Lambda handles it)
             document.querySelectorAll('.template-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const templateType = e.target.getAttribute('data-template');
@@ -232,18 +241,21 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     await new Promise(resolve => setTimeout(resolve, 50)); 
                 }
 
-                seedBtn.innerText = `✅ Sent ${successCount} events! Waiting...`;
+                seedBtn.innerText = `✅ Sent ${successCount} events! Waiting for Kinesis...`;
                 liveIndicator.classList.remove('hidden');
                 
-                setTimeout(() => {
+                // 🛠️ RETRY LOGIC FOR KINESIS DELAY
+                let retries = 0;
+                const retryInterval = setInterval(() => {
                     runBtn.click();
-                    liveIndicator.classList.remove('hidden');
-                    setTimeout(() => {
+                    retries++;
+                    if (retries >= 3) {
+                        clearInterval(retryInterval);
                         liveIndicator.classList.add('hidden');
                         seedBtn.innerText = "✨ Send Test Data";
                         seedBtn.disabled = false;
-                    }, 3000);
-                }, 5000);
+                    }
+                }, 20000); // Retry every 20 seconds, 3 times (total 60s)
             });
 
             runBtn.addEventListener('click', async () => {
