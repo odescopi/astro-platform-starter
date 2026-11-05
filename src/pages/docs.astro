@@ -37,7 +37,7 @@ import Layout from '../layouts/Layout.astro';
                         
                         <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
                             <h3 class="text-lg font-bold text-white mb-2">2. Install the Snippet (Shopify)</h3>
-                            <p class="text-gray-400 text-sm mb-4">Copy the snippet from your dashboard. In Shopify, go to <strong>Online Store > Themes > Edit Code</strong>. Open <code class="bg-gray-900 px-1 py-0.5 rounded text-red-400">theme.liquid</code> and paste the snippet right before the closing <code class="bg-gray-900 px-1 py-0.5 rounded text-red-400">&lt;/head&gt;</code> tag.</p>
+                            <p class="text-gray-400 text-sm mb-4">Copy the snippet from your dashboard. In Shopify, go to <strong>Online Store &gt; Themes &gt; Edit Code</strong>. Open <code class="bg-gray-900 px-1 py-0.5 rounded text-red-400">theme.liquid</code> and paste the snippet right before the closing <code class="bg-gray-900 px-1 py-0.5 rounded text-red-400">&lt;/head&gt;</code> tag.</p>
                         </div>
                     </div>
                 </section>
@@ -55,10 +55,10 @@ import Layout from '../layouts/Layout.astro';
                         <div class="p-4">
                             <p class="text-sm text-gray-400 mb-4">Send an event via cURL:</p>
                             <pre class="bg-gray-950 p-4 rounded text-sm font-mono text-gray-300 overflow-x-auto">
-<span class="text-red-400">curl</span> -X POST https://m01abirupj.execute-api.us-east-1.amazonaws.com/v1/events \
--H <span class="text-green-400">"Content-Type: application/json"</span> \
--H <span class="text-green-400">"x-api-key: YOUR_API_KEY"</span> \
--d <span class="text-yellow-300">'{
+&lt;span class="text-red-400"&gt;curl&lt;/span&gt; -X POST https://m01abirupj.execute-api.us-east-1.amazonaws.com/v1/events \
+-H &lt;span class="text-green-400"&gt;"Content-Type: application/json"&lt;/span&gt; \
+-H &lt;span class="text-green-400"&gt;"x-api-key: YOUR_API_KEY"&lt;/span&gt; \
+-d &lt;span class="text-yellow-300"&gt;'{
   "version": "1.0",
   "event_id": "evt_123456",
   "event_type": "product_view",
@@ -66,7 +66,7 @@ import Layout from '../layouts/Layout.astro';
   "source": "custom_app",
   "user": { "anonymous_id": "user_abc" },
   "page": { "url": "https://mystore.com/products/tshirt" }
-}'</span></pre>
+}'&lt;/span&gt;</pre>
                         </div>
                     </div>
                 </section>
