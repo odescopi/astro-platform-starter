@@ -36,7 +36,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             <p class="text-gray-400">Run analytical queries against your event data.</p>
         </div>
 
-        <!-- 🛠️ ACTIVE CONNECTION BANNER (Shows when coming from Dashboard) -->
+        <!-- 🛠️ ACTIVE CONNECTION BANNER -->
         <div id="activeConnectionBanner" class="bg-green-900/20 border border-green-500/30 rounded-xl p-4 mb-6 hidden flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                 <p class="text-sm text-green-400 font-bold mb-1">✅ Active Connection</p>
@@ -46,7 +46,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 
         <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 mb-6 shadow-xl">
             
-            <!-- 🛠️ MANUAL CREDENTIALS (Only shows if not from Dashboard) -->
+            <!-- 🛠️ MANUAL CREDENTIALS -->
             <div id="credentials-section" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
                     <label class="block text-sm font-bold mb-2 text-gray-300">API Key</label>
@@ -148,7 +148,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             const urlKey = urlParams.get('key');
             const urlShop = urlParams.get('shop');
 
-            // 🛠️ UI FIX: Show Active Connection Banner, Hide Inputs
             if (urlKey && urlShop) {
                 apiKeyInput.value = urlKey;
                 shopNameInput.value = urlShop;
@@ -163,7 +162,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 document.getElementById('activeKeyDisplay').innerText = '...' + urlKey.slice(-4);
             }
 
-            // 🛠️ DEFAULT CUSTOM QUERY
             sqlInput.value = `SELECT * FROM website_analytics.events LIMIT 10`;
 
             document.querySelectorAll('.template-btn').forEach(btn => {
@@ -186,7 +184,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 });
             });
 
-            // Auto-run on load if URL params exist
             if (urlKey && urlShop) {
                 setTimeout(() => runBtn.click(), 500);
             }
@@ -244,7 +241,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 seedBtn.innerText = `✅ Sent ${successCount} events! Waiting for Kinesis...`;
                 liveIndicator.classList.remove('hidden');
                 
-                // 🛠️ RETRY LOGIC FOR KINESIS DELAY
                 let retries = 0;
                 const retryInterval = setInterval(() => {
                     runBtn.click();
@@ -255,7 +251,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         seedBtn.innerText = "✨ Send Test Data";
                         seedBtn.disabled = false;
                     }
-                }, 20000); // Retry every 20 seconds, 3 times (total 60s)
+                }, 20000);
             });
 
             runBtn.addEventListener('click', async () => {
@@ -312,12 +308,34 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     return;
                 }
 
+                // 🛠️ Format Revenue output to look like currency
                 if (columns.includes('total_revenue')) {
                     rows.forEach(row => {
                         if (row.total_revenue) {
                             row.total_revenue = "$" + parseFloat(row.total_revenue).toFixed(2);
                         }
                     });
+                }
+
+                // 🛠️ CPO FIX: Calculate Cart Abandonment Rate
+                if (columns.includes('event_type') && columns.includes('unique_sessions')) {
+                    let carts = 0;
+                    let purchases = 0;
+                    
+                    rows.forEach(row => {
+                        if (row.event_type === 'add_to_cart') carts = parseInt(row.unique_sessions);
+                        if (row.event_type === 'purchase') purchases = parseInt(row.unique_sessions);
+                    });
+
+                    if (carts > 0) {
+                        const abandonmentRate = ((carts - purchases) / carts) * 100;
+                        
+                        // Add a formatted summary row
+                        rows.push({
+                            event_type: "🚨 ABANDONMENT RATE",
+                            unique_sessions: abandonmentRate.toFixed(1) + "%"
+                        });
+                    }
                 }
 
                 if (csvUrl) {
