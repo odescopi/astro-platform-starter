@@ -1,7 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
 
-// 🛠️ Read environment variables from Netlify
 const API_URL = import.meta.env.PUBLIC_API_URL;
 const COGNITO_ID = import.meta.env.PUBLIC_COGNITO_CLIENT_ID;
 const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
@@ -13,7 +12,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
     <script is:inline define:vars={{ COGNITO_ID, COGNITO_DOMAIN }}>
         (function() {
             const REDIRECT_URI = "https://getinsightstream.com/explorer";
-
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
             let idToken = hashParams.get('id_token');
             
@@ -43,7 +41,8 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 
         <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 mb-6 shadow-xl">
             
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <!-- 🛠️ CREDENTIALS (Hidden if auto-filled from Dashboard) -->
+            <div id="credentials-section" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
                     <label class="block text-sm font-bold mb-2 text-gray-300">API Key</label>
                     <input type="password" id="apiKey" placeholder="sk_live_..." class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-white focus:outline-none focus:border-red-400 font-mono text-sm" />
@@ -84,8 +83,11 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             </div>
             
             <div class="mb-4">
-                <label class="block text-sm font-bold mb-2 text-gray-300">SQL Query</label>
-                <textarea id="sqlQuery" rows="4" class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-green-400 font-mono text-sm focus:outline-none focus:border-red-400"></textarea>
+                <div class="flex justify-between items-end mb-2">
+                    <label class="block text-sm font-bold text-gray-300">SQL Query</label>
+                    <span class="text-xs text-gray-500">Your shop and date partitions are automatically injected.</span>
+                </div>
+                <textarea id="sqlQuery" rows="5" class="w-full bg-gray-900 border border-gray-700 rounded p-3 text-green-400 font-mono text-sm focus:outline-none focus:border-red-400"></textarea>
             </div>
 
             <button id="runBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded transition-colors w-full sm:w-auto">
@@ -138,36 +140,47 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             const liveIndicator = document.getElementById('liveIndicator');
             const downloadCsvBtn = document.getElementById('downloadCsvBtn');
 
-            const today = new Date();
-            const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0'); 
-            const dd = String(today.getDate()).padStart(2, '0');
-            
-            // Default clean query
-            sqlInput.value = `SELECT event_type, COUNT(*) as count FROM website_analytics.events WHERE shop='your_shop_name' AND year='${yyyy}' AND month='${mm}' AND day='${dd}' GROUP BY event_type`;
+            // 🛠️ AUTO-FILL FROM URL (The "Aha!" Moment)
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlKey = urlParams.get('key');
+            const urlShop = urlParams.get('shop');
 
-            // 🛠️ STANDARD TEMPLATE LOGIC
+            if (urlKey) apiKeyInput.value = urlKey;
+            if (urlShop) shopNameInput.value = urlShop;
+
+            // Hide inputs if coming from Dashboard
+            if (urlKey && urlShop) {
+                document.getElementById('credentials-section').classList.add('hidden');
+            }
+
+            // 🛠️ DEFAULT CUSTOM QUERY (No placeholders)
+            sqlInput.value = `SELECT * FROM website_analytics.events LIMIT 10`;
+
+            // 🛠️ STANDARD TEMPLATE LOGIC (No hardcoded dates - Lambda handles it)
             document.querySelectorAll('.template-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const templateType = e.target.getAttribute('data-template');
-                    let currentShop = shopNameInput.value.trim().toLowerCase() || 'your_shop_name';
                     
                     let query = "";
                     if (templateType === 'views') {
-                        query = `SELECT page_url, COUNT(*) as total_views FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'page_view' AND year='${yyyy}' AND month='${mm}' GROUP BY page_url ORDER BY total_views DESC LIMIT 10;`;
+                        query = `SELECT page_url, COUNT(*) as total_views FROM website_analytics.events WHERE event_type = 'page_view' GROUP BY page_url ORDER BY total_views DESC LIMIT 10;`;
                     } else if (templateType === 'cart') {
-                        query = `SELECT event_type, COUNT(DISTINCT session_id) as unique_sessions FROM website_analytics.events WHERE shop='${currentShop}' AND event_type IN ('add_to_cart', 'checkout_start', 'purchase') AND year='${yyyy}' AND month='${mm}' GROUP BY event_type;`;
+                        query = `SELECT event_type, COUNT(DISTINCT session_id) as unique_sessions FROM website_analytics.events WHERE event_type IN ('add_to_cart', 'checkout_start', 'purchase') GROUP BY event_type;`;
                     } else if (templateType === 'revenue') {
-                        // Clean standard SUM
-                        query = `SELECT SUM(revenue) as total_revenue, COUNT(DISTINCT order_id) as total_orders FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'purchase' AND year='${yyyy}' AND month='${mm}';`;
+                        query = `SELECT SUM(revenue) as total_revenue, COUNT(DISTINCT order_id) as total_orders FROM website_analytics.events WHERE event_type = 'purchase';`;
                     } else if (templateType === 'video') {
-                        query = `SELECT event_type, COUNT(*) as total_events FROM website_analytics.events WHERE shop='${currentShop}' AND event_type = 'video_watched' GROUP BY event_type;`;
+                        query = `SELECT event_type, COUNT(*) as total_events FROM website_analytics.events WHERE event_type = 'video_watched' GROUP BY event_type;`;
                     }
                     
                     sqlInput.value = query;
                     runBtn.click();
                 });
             });
+
+            // Auto-run on load if URL params exist
+            if (urlKey && urlShop) {
+                setTimeout(() => runBtn.click(), 500);
+            }
 
             seedBtn.addEventListener('click', async () => {
                 const apiKey = apiKeyInput.value.trim();
@@ -287,7 +300,6 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     return;
                 }
 
-                // 🛠️ Format Revenue output to look like currency
                 if (columns.includes('total_revenue')) {
                     rows.forEach(row => {
                         if (row.total_revenue) {
