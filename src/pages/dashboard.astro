@@ -138,7 +138,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
         </div>
     </div>
 
-    <!-- 🛠️ NEW: ONBOARDING MODAL -->
+    <!-- 🛠️ ONBOARDING MODAL -->
     <div id="onboardingModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden transition-opacity duration-300">
         <div class="bg-gray-800 border border-gray-700 rounded-2xl p-8 max-w-lg w-full mx-4 shadow-2xl relative overflow-hidden">
             <div class="absolute -top-20 -right-20 w-40 h-40 bg-red-500 rounded-full blur-3xl opacity-20"></div>
@@ -343,7 +343,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                                 currentPlan = 'pro';
                             }
 
-                            // Desktop Row
+                            // 🛠️ Desktop Row (With URL-Encoded Explore Link)
                             const tr = document.createElement('tr');
                             tr.className = "border-b border-gray-700 hover:bg-gray-750";
                             tr.innerHTML = `
@@ -359,14 +359,14 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end gap-2">
-                                        <a href="/explorer?key=${key.api_key}&shop=${key.shop_domain}" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-2 rounded transition-colors flex-shrink-0">📊 Explore</a>
+                                        <a href="/explorer?key=${encodeURIComponent(key.api_key)}&shop=${encodeURIComponent(key.shop_domain)}" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-2 rounded transition-colors flex-shrink-0">📊 Explore</a>
                                         <button onclick="openRevokeModal('${key.api_key}')" class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-1 px-2 rounded transition-colors flex-shrink-0">Revoke</button>
                                     </div>
                                 </td>
                             `;
                             keysTableBody.appendChild(tr);
 
-                            // Mobile Card
+                            // 🛠️ Mobile Card (With URL-Encoded Explore Link)
                             const card = document.createElement('div');
                             card.className = "bg-gray-800 rounded-xl border border-gray-700 p-5 shadow-lg";
                             card.innerHTML = `
@@ -379,7 +379,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                                     <p id="m-key-${index}" class="font-mono text-green-400 text-sm break-all">${key.api_key}</p>
                                 </div>
                                 <div class="flex gap-2">
-                                    <a href="/explorer?key=${key.api_key}&shop=${key.shop_domain}" class="flex-1 bg-red-500 hover:bg-red-600 text-center text-white text-xs font-bold py-2 rounded transition-colors">📊 Explore</a>
+                                    <a href="/explorer?key=${encodeURIComponent(key.api_key)}&shop=${encodeURIComponent(key.shop_domain)}" class="flex-1 bg-red-500 hover:bg-red-600 text-center text-white text-xs font-bold py-2 rounded transition-colors">📊 Explore</a>
                                     <button onclick="copyToClipboard('m-key-${index}', this)" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 rounded transition-colors">Copy</button>
                                     <button onclick="openRevokeModal('${key.api_key}')" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 rounded transition-colors">Revoke</button>
                                 </div>
