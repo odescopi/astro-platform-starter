@@ -74,7 +74,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 <div class="bg-red-500 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">1</div>
                 <div class="flex-grow">
                     <h2 class="text-xl font-bold text-white mb-2">Generate a new API Key</h2>
-                    <p class="text-sm text-gray-400 mb-4">Enter your store name (e.g., "nike") to generate a key. You can generate multiple keys for different stores.</p>
+                    <p class="text-sm text-gray-400 mb-4">Enter your app or store name (e.g., "nike" or "my-saas") to generate a key. You can generate multiple keys for different projects.</p>
                     
                     <div class="flex flex-col sm:flex-row gap-3">
                         <input type="text" id="shopName" placeholder="e.g., nike" class="bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-red-400 flex-grow font-mono text-sm" />
@@ -145,28 +145,28 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             
             <div class="relative z-10">
                 <h2 class="text-2xl font-extrabold text-white mb-2">Welcome to GetInsightStream! 🚀</h2>
-                <p class="text-gray-400 mb-6 text-sm">Let's get your store connected in 3 simple steps.</p>
+                <p class="text-gray-400 mb-6 text-sm">Let's get your project connected in 3 simple steps.</p>
                 
                 <div class="space-y-6 mb-8">
                     <div class="flex gap-4">
                         <div class="bg-gray-900 border border-gray-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">1</div>
                         <div>
                             <h3 class="text-white font-bold text-sm mb-1">Generate an API Key</h3>
-                            <p class="text-gray-400 text-xs">Scroll down and enter your shop name to generate a secure API key.</p>
+                            <p class="text-gray-400 text-xs">Scroll down and enter your app or store name to generate a secure API key.</p>
                         </div>
                     </div>
                     <div class="flex gap-4">
                         <div class="bg-gray-900 border border-gray-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">2</div>
                         <div>
-                            <h3 class="text-white font-bold text-sm mb-1">Paste the Snippet</h3>
-                            <p class="text-gray-400 text-xs">Go to your Shopify Theme Editor and paste the provided snippet into your <code class="text-red-400 bg-gray-900 px-1 rounded">theme.liquid</code> file.</p>
+                            <h3 class="text-white font-bold text-sm mb-1">Install the Tracker</h3>
+                            <p class="text-gray-400 text-xs">Paste the snippet into your Shopify theme, <strong>or send REST API events from any custom app.</strong></p>
                         </div>
                     </div>
                     <div class="flex gap-4">
                         <div class="bg-gray-900 border border-gray-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">3</div>
                         <div>
                             <h3 class="text-white font-bold text-sm mb-1">Watch Your Data Flow</h3>
-                            <p class="text-gray-400 text-xs">As customers browse, your events will automatically appear in your dashboard.</p>
+                            <p class="text-gray-400 text-xs">As users browse, your events will automatically appear in your dashboard.</p>
                         </div>
                     </div>
                 </div>
