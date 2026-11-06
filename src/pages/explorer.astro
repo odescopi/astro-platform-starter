@@ -198,9 +198,11 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     if (templateType === 'traffic') {
                         query = `SELECT page_url, COUNT(*) as total_views, COUNT(DISTINCT session_id) as unique_visitors FROM website_analytics.events WHERE event_type = 'page_view' GROUP BY page_url ORDER BY total_views DESC LIMIT 10;`;
                     } else if (templateType === 'clicks') {
-                        query = `SELECT button_text, COUNT(*) as total_clicks FROM website_analytics.events WHERE event_type = 'button_click' GROUP BY button_text ORDER BY total_clicks DESC LIMIT 10;`;
+                        // 🛠️ Map Syntax for custom properties
+                        query = `SELECT properties['button_text'] as button_name, COUNT(*) as total_clicks FROM website_analytics.events WHERE event_type = 'button_click' GROUP BY properties['button_text'] ORDER BY total_clicks DESC LIMIT 10;`;
                     } else if (templateType === 'products') {
-                        query = `SELECT product_name, COUNT(*) as views FROM website_analytics.events WHERE event_type = 'product_view' GROUP BY product_name ORDER BY views DESC LIMIT 10;`;
+                        // 🛠️ Map Syntax for custom properties
+                        query = `SELECT properties['product_name'] as product_name, COUNT(*) as views FROM website_analytics.events WHERE event_type = 'product_view' GROUP BY properties['product_name'] ORDER BY views DESC LIMIT 10;`;
                     } else if (templateType === 'funnel') {
                         query = `SELECT event_type, COUNT(DISTINCT session_id) as unique_users FROM website_analytics.events WHERE event_type IN ('add_to_cart', 'checkout_start', 'purchase') GROUP BY event_type;`;
                     } else if (templateType === 'revenue') {
@@ -219,7 +221,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 setTimeout(() => {
                     const trafficBtn = document.querySelector('[data-template="traffic"]');
                     if (trafficBtn) {
-                        trafficBtn.click(); // This now automatically highlights the button too
+                        trafficBtn.click(); 
                     } else {
                         runBtn.click(); 
                     }
@@ -237,23 +239,31 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 const fakeUserId = "user_" + Date.now(); 
                 let successCount = 0;
 
-                const eventTypes = ["page_view", "page_view", "video_watched", "add_to_cart", "purchase"];
+                // 🛠️ CPO FIX: Full E-Commerce Journey Simulation
+                const events = [
+                    { type: "page_view" },
+                    { type: "button_click", button_text: "Get Started" },
+                    { type: "product_view", product_name: "Black T-Shirt" },
+                    { type: "add_to_cart" },
+                    { type: "checkout_start" },
+                    { type: "purchase", revenue: 49.99, order_id: "ord_" + Date.now() }
+                ];
 
                 for (let i = 0; i < 20; i++) {
-                    const type = eventTypes[i % eventTypes.length];
-                    
+                    const ev = events[i % events.length];
                     const payload = {
                         version: "1.0",
                         event_id: "evt_" + Date.now() + "_" + i,
-                        event_type: type,
+                        event_type: ev.type,
                         event_time: new Date().toISOString(),
                         source: "sandbox",
                         user: { anonymous_id: fakeUserId },
                         session: { session_id: "sess_" + Date.now() },
-                        page: { url: "https://demo-store.com/products/" + type },
-                        revenue: type === "purchase" ? 99.99 : 0.0,
-                        order_id: type === "purchase" ? "ord_" + Date.now() : "",
-                        product_id: "prod_123"
+                        page: { url: "https://demo-store.com/" },
+                        button_text: ev.button_text || "",
+                        product_name: ev.product_name || "",
+                        revenue: ev.revenue || 0.0,
+                        order_id: ev.order_id || ""
                     };
 
                     try {
