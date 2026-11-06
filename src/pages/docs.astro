@@ -45,6 +45,19 @@ import Layout from '../layouts/Layout.astro';
                     <h2 class="text-2xl font-bold text-white mb-4">API Reference</h2>
                     <p class="text-gray-300 mb-4">Send events directly from any backend, mobile app, or custom website.</p>
                     
+                    <!-- 🛠️ CPO FIX: EXPLAIN FRONTEND VS BACKEND -->
+                    <div class="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-5 mb-6">
+                        <h3 class="text-yellow-400 font-bold mb-2 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Pro Tip: Frontend vs. Backend Tracking
+                        </h3>
+                        <p class="text-sm text-gray-300">
+                            The <code>tracker.js</code> snippet automatically tracks Page Views, Product Views, and Add-to-Carts on the frontend. 
+                            <br><br>
+                            However, for <strong>100% accurate Revenue tracking</strong>, we recommend sending the <code>purchase</code> event from your backend server (e.g., in your payment success webhook) using the cURL command below. This ensures you never lose a sale due to adblockers or browser closures.
+                        </p>
+                    </div>
+
                     <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden mb-4">
                         <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 flex items-center gap-2">
                             <span class="bg-green-500/20 text-green-400 font-bold text-xs px-2 py-1 rounded">POST</span>
