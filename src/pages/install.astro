@@ -20,7 +20,7 @@ import Layout from '../layouts/Layout.astro';
         <!-- Step 2: Snippet -->
         <div class="bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-xl mb-8">
             <h2 class="text-xl font-bold mb-4 text-white">2. Copy this snippet</h2>
-            <p class="text-sm text-gray-400 mb-4">Paste this into the <code>&lt;head&gt;</code> of your website or Shopify theme.</p>
+            <p class="text-sm text-gray-400 mb-4">Paste this into the <code>&lt;head&gt;</code> of your website, Shopify theme, or custom app.</p>
             
             <div class="relative">
                 <pre id="snippetCode" class="bg-gray-900 p-4 rounded text-green-400 font-mono text-sm overflow-x-auto whitespace-pre-wrap break-all border border-gray-700"></pre>
@@ -45,28 +45,16 @@ import Layout from '../layouts/Layout.astro';
                     <p class="text-sm text-gray-400">Use a free plugin like <strong>"Insert Headers and Footers"</strong> and paste the snippet into the "Scripts in Header" box.</p>
                 </div>
                 
-                <!-- Wix -->
+                <!-- Custom Apps -->
                 <div class="bg-gray-900 p-5 rounded-lg border border-gray-700">
-                    <h3 class="font-bold text-red-400 mb-2">Wix</h3>
-                    <p class="text-sm text-gray-400">Go to <strong>Settings</strong> → <strong>Custom Code</strong> → <strong>Add Custom Code</strong>. Paste the snippet, set it to load on "All Pages", and apply.</p>
+                    <h3 class="font-bold text-red-400 mb-2">Custom Apps (React, Vue, Node)</h3>
+                    <p class="text-sm text-gray-400">Paste the snippet inside your main <code>index.html</code> file, or use the REST API to send events from your backend.</p>
                 </div>
 
-                <!-- Squarespace -->
+                <!-- Wix / Squarespace -->
                 <div class="bg-gray-900 p-5 rounded-lg border border-gray-700">
-                    <h3 class="font-bold text-red-400 mb-2">Squarespace</h3>
-                    <p class="text-sm text-gray-400">Go to <strong>Settings</strong> → <strong>Advanced</strong> → <strong>Code Injection</strong> → <strong>Header</strong>. Paste the snippet and save.</p>
-                </div>
-                
-                <!-- React -->
-                <div class="bg-gray-900 p-5 rounded-lg border border-gray-700">
-                    <h3 class="font-bold text-red-400 mb-2">React / Next.js</h3>
-                    <p class="text-sm text-gray-400">Paste the snippet inside the <code>&lt;head&gt;</code> tag in your <code>_document.js</code> or <code>layout.tsx</code> file.</p>
-                </div>
-                
-                <!-- Custom HTML -->
-                <div class="bg-gray-900 p-5 rounded-lg border border-gray-700">
-                    <h3 class="font-bold text-red-400 mb-2">Custom HTML</h3>
-                    <p class="text-sm text-gray-400">Paste the snippet anywhere inside the <code>&lt;head&gt;</code> tag of your main HTML template.</p>
+                    <h3 class="font-bold text-red-400 mb-2">Wix / Squarespace</h3>
+                    <p class="text-sm text-gray-400">Go to your site settings, find <strong>Custom Code</strong> or <strong>Code Injection</strong>, and paste it into the Header.</p>
                 </div>
             </div>
         </div>
@@ -82,7 +70,7 @@ import Layout from '../layouts/Layout.astro';
             function updateSnippet() {
                 const key = apiKeyInput.value.trim() || "YOUR_API_KEY_HERE";
                 
-                // Using string concatenation to avoid Astro compiler issues with backslashes
+                // Using string concatenation to avoid Astro compiler issues
                 let code = "<!-- GetInsightStream Tracker -->\n";
                 code += "<script\n";
                 code += "  src=\"https://getinsightstream.com/tracker.js\"\n";
@@ -93,9 +81,20 @@ import Layout from '../layouts/Layout.astro';
                 snippetCode.textContent = code;
             }
 
-            apiKeyInput.addEventListener('input', updateSnippet);
-            updateSnippet(); // Initial load
+            // 🛠️ AUTO-FILL FROM URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlKey = urlParams.get('key');
+            if (urlKey) {
+                apiKeyInput.value = urlKey;
+            }
 
+            // Initial load (updates snippet if URL had a key, or shows placeholder)
+            updateSnippet(); 
+
+            // Update snippet live as user types manually
+            apiKeyInput.addEventListener('input', updateSnippet);
+
+            // Copy button logic
             copyBtn.addEventListener('click', () => {
                 navigator.clipboard.writeText(snippetCode.textContent);
                 copyBtn.innerText = "Copied! ✅";
