@@ -7,24 +7,22 @@
         return;
     }
 
-    // 🛠️ THE FIX: Updated to your current live API Gateway URL
     const API_ENDPOINT = "https://m01abirupj.execute-api.us-east-1.amazonaws.com/v1/events";
 
-    // 2. Generate a unique anonymous user ID (stored in browser)
+    // 2. Generate IDs
     let userId = localStorage.getItem('gis_user_id');
     if (!userId) {
         userId = 'user_' + Math.random().toString(36).substring(2, 15);
         localStorage.setItem('gis_user_id', userId);
     }
 
-    // 3. Generate a session ID (resets every 30 mins of inactivity)
     let sessionId = sessionStorage.getItem('gis_session_id');
     if (!sessionId) {
         sessionId = 'sess_' + Math.random().toString(36).substring(2, 15);
         sessionStorage.setItem('gis_session_id', sessionId);
     }
 
-    // 4. Universal Function to send the event to AWS
+    // 3. Internal Event Sender
     function sendEvent(eventType, additionalData = {}) {
         const payload = {
             version: "1.0",
@@ -52,11 +50,10 @@
         }).catch(err => console.error("GetInsightStream Error:", err));
     }
 
-    // 5. Automatically track Page Views
+    // 4. Automatically track Page Views
     sendEvent('page_view');
 
-    // 6. Universal "Add to Cart" Listener
-    // This works for Shopify, WooCommerce, Wix, and custom apps.
+    // 5. Universal Auto-Listener for "Add to Cart"
     document.addEventListener('click', function(e) {
         const target = e.target.closest('button, a');
         if (!target) return;
@@ -68,6 +65,13 @@
             });
         }
     });
+
+    // 🛠️ THE FIX: Expose the Global API for Custom Triggers
+    window.getinsightstream = function(action, eventType, data = {}) {
+        if (action === 'track') {
+            sendEvent(eventType, data);
+        }
+    };
 
     console.log("✅ GetInsightStream Tracker Active");
 })();
