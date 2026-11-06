@@ -68,20 +68,27 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 </button>
             </div>
 
+            <!-- 🛠️ THE E-COMMERCE USER JOURNEY TEMPLATES -->
             <div class="mb-4">
-                <label class="block text-sm font-bold mb-2 text-gray-300">Quick Templates</label>
+                <label class="block text-sm font-bold mb-2 text-gray-300">Business Dashboards (1-Click)</label>
                 <div class="flex flex-wrap gap-2 mb-4">
-                    <button class="template-btn bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors" data-template="views">
-                        📊 Total Page Views
+                    <button class="template-btn bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors" data-template="traffic">
+                        📊 Top Pages
                     </button>
-                    <button class="template-btn bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors" data-template="cart">
-                        🛒 Cart Abandonment
+                    <button class="template-btn bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors" data-template="clicks">
+                        🎯 CTA Clicks
+                    </button>
+                    <button class="template-btn bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors" data-template="products">
+                        🔥 Product Heatmap
+                    </button>
+                    <button class="template-btn bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors" data-template="funnel">
+                        🛒 Checkout Funnel
                     </button>
                     <button class="template-btn bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors" data-template="revenue">
-                        💰 Revenue Today
+                        💰 Revenue & AOV
                     </button>
-                    <button class="template-btn bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors" data-template="video">
-                        🎥 Video Views
+                    <button class="template-btn bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors" data-template="abandonment">
+                        🚨 Cart Abandonment
                     </button>
                 </div>
             </div>
@@ -164,19 +171,24 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 
             sqlInput.value = `SELECT * FROM website_analytics.events LIMIT 10`;
 
+            // 🛠️ THE E-COMMERCE USER JOURNEY TEMPLATES
             document.querySelectorAll('.template-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const templateType = e.target.getAttribute('data-template');
                     
                     let query = "";
-                    if (templateType === 'views') {
-                        query = `SELECT page_url, COUNT(*) as total_views FROM website_analytics.events WHERE event_type = 'page_view' GROUP BY page_url ORDER BY total_views DESC LIMIT 10;`;
-                    } else if (templateType === 'cart') {
-                        query = `SELECT event_type, COUNT(DISTINCT session_id) as unique_sessions FROM website_analytics.events WHERE event_type IN ('add_to_cart', 'checkout_start', 'purchase') GROUP BY event_type;`;
+                    if (templateType === 'traffic') {
+                        query = `SELECT page_url, COUNT(*) as total_views, COUNT(DISTINCT session_id) as unique_visitors FROM website_analytics.events WHERE event_type = 'page_view' GROUP BY page_url ORDER BY total_views DESC LIMIT 10;`;
+                    } else if (templateType === 'clicks') {
+                        query = `SELECT button_text, COUNT(*) as total_clicks FROM website_analytics.events WHERE event_type = 'button_click' GROUP BY button_text ORDER BY total_clicks DESC LIMIT 10;`;
+                    } else if (templateType === 'products') {
+                        query = `SELECT product_name, COUNT(*) as views FROM website_analytics.events WHERE event_type = 'product_view' GROUP BY product_name ORDER BY views DESC LIMIT 10;`;
+                    } else if (templateType === 'funnel') {
+                        query = `SELECT event_type, COUNT(DISTINCT session_id) as unique_users FROM website_analytics.events WHERE event_type IN ('add_to_cart', 'checkout_start', 'purchase') GROUP BY event_type;`;
                     } else if (templateType === 'revenue') {
-                        query = `SELECT SUM(revenue) as total_revenue, COUNT(DISTINCT order_id) as total_orders FROM website_analytics.events WHERE event_type = 'purchase';`;
-                    } else if (templateType === 'video') {
-                        query = `SELECT event_type, COUNT(*) as total_events FROM website_analytics.events WHERE event_type = 'video_watched' GROUP BY event_type;`;
+                        query = `SELECT SUM(revenue) as total_revenue, COUNT(DISTINCT order_id) as total_orders, (SUM(revenue) / COUNT(DISTINCT order_id)) as average_order_value FROM website_analytics.events WHERE event_type = 'purchase';`;
+                    } else if (templateType === 'abandonment') {
+                        query = `SELECT event_type, COUNT(DISTINCT session_id) as unique_sessions FROM website_analytics.events WHERE event_type IN ('add_to_cart', 'purchase') GROUP BY event_type;`;
                     }
                     
                     sqlInput.value = query;
@@ -184,6 +196,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 });
             });
 
+            // Auto-run on load if URL params exist
             if (urlKey && urlShop) {
                 setTimeout(() => runBtn.click(), 500);
             }
@@ -308,11 +321,14 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     return;
                 }
 
-                // 🛠️ Format Revenue output to look like currency
+                // 🛠️ Format Revenue & AOV output to look like currency
                 if (columns.includes('total_revenue')) {
                     rows.forEach(row => {
                         if (row.total_revenue) {
                             row.total_revenue = "$" + parseFloat(row.total_revenue).toFixed(2);
+                        }
+                        if (row.average_order_value) {
+                            row.average_order_value = "$" + parseFloat(row.average_order_value).toFixed(2);
                         }
                     });
                 }
