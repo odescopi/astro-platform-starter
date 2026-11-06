@@ -48,8 +48,8 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
             <p class="text-gray-400">Welcome back, <span id="userFirstName" class="text-white font-bold">User</span>!</p>
         </div>
 
-        <!-- 🛠️ PAYWALL BANNER (Injected by JS) -->
-        <div id="upgradeBanner" class="bg-red-500/10 border border-red-500/50 rounded-xl p-6 mb-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hidden"></div>
+        <!-- 🛠️ PAYWALL / UPSELL BANNER (Injected by JS) -->
+        <div id="upgradeBanner" class="hidden"></div>
 
         <!-- 🛠️ USAGE PROGRESS BAR -->
         <div id="usageCard" class="bg-gray-800 p-8 rounded-xl border border-gray-700 shadow-xl mb-10 hidden">
@@ -406,6 +406,58 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                             usageBar.className = "bg-yellow-500 h-3 rounded-full transition-all duration-500";
                         } else {
                             usageBar.className = "bg-green-500 h-3 rounded-full transition-all duration-500";
+                        }
+
+                        // 🛠️ CPO FIX: Enforce Free & Pro Limits + Show Upgrade Banners
+                        const genBtn = document.getElementById('genBtn');
+                        const shopInput = document.getElementById('shopName');
+
+                        if (currentPlan === 'free' && data.keys.length >= 1) {
+                            // Free User Limit Reached (1 Key)
+                            genBtn.disabled = true;
+                            genBtn.className = "bg-gray-700 text-gray-400 font-bold py-3 px-6 rounded-lg cursor-not-allowed whitespace-nowrap";
+                            genBtn.innerText = "Limit Reached";
+                            
+                            shopInput.disabled = true;
+                            shopInput.placeholder = "Upgrade to Pro to add more keys";
+                            shopInput.className = "bg-gray-900 border border-gray-700 rounded-lg p-3 text-gray-500 cursor-not-allowed flex-grow font-mono text-sm";
+
+                            // Show the red upgrade banner if they haven't seen it
+                            if (!upgradeBanner.innerHTML) {
+                                upgradeBanner.className = "bg-red-500/10 border border-red-500/50 rounded-xl p-6 mb-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4";
+                                upgradeBanner.classList.remove('hidden');
+                                upgradeBanner.innerHTML = `
+                                    <div>
+                                        <h3 class="text-lg font-bold text-red-400 mb-1">🚨 Free Plan Limit Reached</h3>
+                                        <p class="text-sm text-red-200/70">You have used 1/1 API keys. Upgrade to Pro to unlock 3 API keys, 250,000 events/month, and 6-month data retention.</p>
+                                    </div>
+                                    <a href="/pricing" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg transition-colors whitespace-nowrap">
+                                        Upgrade to Pro - $49/mo
+                                    </a>
+                                `;
+                            }
+                        } else if (currentPlan === 'pro' && data.keys.length >= 3) {
+                            // Pro User Limit Reached (3 Keys)
+                            genBtn.disabled = true;
+                            genBtn.className = "bg-gray-700 text-gray-400 font-bold py-3 px-6 rounded-lg cursor-not-allowed whitespace-nowrap";
+                            genBtn.innerText = "Limit Reached";
+                            
+                            shopInput.disabled = true;
+                            shopInput.placeholder = "Enterprise plan required for more keys";
+                            shopInput.className = "bg-gray-900 border border-gray-700 rounded-lg p-3 text-gray-500 cursor-not-allowed flex-grow font-mono text-sm";
+
+                            // Show the yellow Enterprise upsell banner
+                            upgradeBanner.className = "bg-yellow-500/10 border border-yellow-500/50 rounded-xl p-6 mb-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4";
+                            upgradeBanner.classList.remove('hidden');
+                            upgradeBanner.innerHTML = `
+                                <div>
+                                    <h3 class="text-lg font-bold text-yellow-400 mb-1">⭐ Unlock Unlimited Power</h3>
+                                    <p class="text-sm text-yellow-200/70">You have reached the limit of 3 API keys on the Pro plan. Upgrade to Enterprise for unlimited keys, custom retention, and dedicated support.</p>
+                                </div>
+                                <a href="mailto:support@getinsightstream.com" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-6 rounded-lg transition-colors whitespace-nowrap">
+                                    Contact Sales
+                                </a>
+                            `;
                         }
 
                         if (currentPlan === 'free' && totalUsage >= 10000) {
