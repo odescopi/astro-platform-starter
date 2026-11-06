@@ -171,10 +171,28 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 
             sqlInput.value = `SELECT * FROM website_analytics.events LIMIT 10`;
 
+            // 🛠️ Highlight Active Template Logic
+            function setActiveTemplate(activeBtn) {
+                document.querySelectorAll('.template-btn').forEach(btn => {
+                    // Reset all buttons to gray
+                    btn.className = "template-btn bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors";
+                });
+                if (activeBtn) {
+                    // Highlight the active button to red with a ring
+                    activeBtn.className = "template-btn bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-2 px-3 rounded transition-colors ring-2 ring-red-400";
+                }
+            }
+
+            // 🛠️ Clear highlight if user manually types a query
+            sqlInput.addEventListener('input', () => {
+                setActiveTemplate(null);
+            });
+
             // 🛠️ THE E-COMMERCE USER JOURNEY TEMPLATES
             document.querySelectorAll('.template-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const templateType = e.target.getAttribute('data-template');
+                    setActiveTemplate(e.target); // Highlight this button
                     
                     let query = "";
                     if (templateType === 'traffic') {
@@ -196,9 +214,16 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 });
             });
 
-            // Auto-run on load if URL params exist
+            // 🛠️ CPO FIX: Auto-run the "Top Pages" template on load if coming from Dashboard
             if (urlKey && urlShop) {
-                setTimeout(() => runBtn.click(), 500);
+                setTimeout(() => {
+                    const trafficBtn = document.querySelector('[data-template="traffic"]');
+                    if (trafficBtn) {
+                        trafficBtn.click(); // This now automatically highlights the button too
+                    } else {
+                        runBtn.click(); 
+                    }
+                }, 500);
             }
 
             seedBtn.addEventListener('click', async () => {
