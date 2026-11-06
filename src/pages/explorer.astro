@@ -198,10 +198,8 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                     if (templateType === 'traffic') {
                         query = `SELECT page_url, COUNT(*) as total_views, COUNT(DISTINCT session_id) as unique_visitors FROM website_analytics.events WHERE event_type = 'page_view' GROUP BY page_url ORDER BY total_views DESC LIMIT 10;`;
                     } else if (templateType === 'clicks') {
-                        // 🛠️ Map Syntax for custom properties
                         query = `SELECT properties['button_text'] as button_name, COUNT(*) as total_clicks FROM website_analytics.events WHERE event_type = 'button_click' GROUP BY properties['button_text'] ORDER BY total_clicks DESC LIMIT 10;`;
                     } else if (templateType === 'products') {
-                        // 🛠️ Map Syntax for custom properties
                         query = `SELECT properties['product_name'] as product_name, COUNT(*) as views FROM website_analytics.events WHERE event_type = 'product_view' GROUP BY properties['product_name'] ORDER BY views DESC LIMIT 10;`;
                     } else if (templateType === 'funnel') {
                         query = `SELECT event_type, COUNT(DISTINCT session_id) as unique_users FROM website_analytics.events WHERE event_type IN ('add_to_cart', 'checkout_start', 'purchase') GROUP BY event_type;`;
@@ -251,6 +249,10 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 
                 for (let i = 0; i < 20; i++) {
                     const ev = events[i % events.length];
+                    
+                    // 🛠️ THE FIX: Share the same session ID for the whole journey
+                    const sharedSessionId = "sess_journey_" + Math.floor(i / events.length); 
+                    
                     const payload = {
                         version: "1.0",
                         event_id: "evt_" + Date.now() + "_" + i,
@@ -258,7 +260,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         event_time: new Date().toISOString(),
                         source: "sandbox",
                         user: { anonymous_id: fakeUserId },
-                        session: { session_id: "sess_" + Date.now() },
+                        session: { session_id: sharedSessionId },
                         page: { url: "https://demo-store.com/" },
                         button_text: ev.button_text || "",
                         product_name: ev.product_name || "",
@@ -288,7 +290,13 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
 
                 seedBtn.innerText = `✅ Sent ${successCount} events! Waiting for Kinesis...`;
                 liveIndicator.classList.remove('hidden');
-                
+
+                // 🛠️ CPO FIX: Auto-select "Top Pages" to show a real dashboard during polling
+                const trafficBtn = document.querySelector('[data-template="traffic"]');
+                if (trafficBtn) {
+                    trafficBtn.click(); // This highlights the button and runs the query
+                }
+
                 let retries = 0;
                 const retryInterval = setInterval(() => {
                     runBtn.click();
@@ -299,7 +307,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         seedBtn.innerText = "✨ Send Test Data";
                         seedBtn.disabled = false;
                     }
-                }, 20000);
+                }, 10000); // Faster polling (10 seconds)
             });
 
             runBtn.addEventListener('click', async () => {
