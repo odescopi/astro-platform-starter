@@ -237,55 +237,55 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 const fakeUserId = "user_" + Date.now(); 
                 let successCount = 0;
 
-                // 🛠️ CPO FIX: Full E-Commerce Journey Simulation
-                const events = [
-                    { type: "page_view" },
-                    { type: "button_click", button_text: "Get Started" },
-                    { type: "product_view", product_name: "Black T-Shirt" },
-                    { type: "add_to_cart" },
-                    { type: "checkout_start" },
-                    { type: "purchase", revenue: 49.99, order_id: "ord_" + Date.now() }
+                // 🛠️ CTO FIX: Realistic Journey & Proper Session Grouping
+                const journeySteps = [
+                    { type: "page_view", props: {} },
+                    { type: "button_click", props: { button_text: "Get Started" } },
+                    { type: "product_view", props: { product_name: "Black T-Shirt" } },
+                    { type: "add_to_cart", props: {} },
+                    { type: "checkout_start", props: {} },
+                    { type: "purchase", props: { revenue: 49.99, order_id: "ord_" + Date.now() } }
                 ];
 
-                for (let i = 0; i < 20; i++) {
-                    const ev = events[i % events.length];
+                // We send 3 complete user journeys (6 events each = 18 events total)
+                for (let journey = 0; journey < 3; journey++) {
+                    const sharedSessionId = "sess_journey_" + Date.now() + "_" + journey;
                     
-                    // 🛠️ THE FIX: Share the same session ID for the whole journey
-                    const sharedSessionId = "sess_journey_" + Math.floor(i / events.length); 
-                    
-                    const payload = {
-                        version: "1.0",
-                        event_id: "evt_" + Date.now() + "_" + i,
-                        event_type: ev.type,
-                        event_time: new Date().toISOString(),
-                        source: "sandbox",
-                        user: { anonymous_id: fakeUserId },
-                        session: { session_id: sharedSessionId },
-                        page: { url: "https://demo-store.com/" },
-                        button_text: ev.button_text || "",
-                        product_name: ev.product_name || "",
-                        revenue: ev.revenue || 0.0,
-                        order_id: ev.order_id || ""
-                    };
-
-                    try {
-                        const res = await fetch(INGEST_ENDPOINT, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
-                            body: JSON.stringify(payload)
-                        });
+                    for (let step = 0; step < journeySteps.length; step++) {
+                        const ev = journeySteps[step];
                         
-                        const data = await res.json();
-                        if (res.ok) {
-                            successCount++;
-                        } else {
-                            errorText.innerText = "API Rejected the key: " + (data.error || "Unknown error");
-                            seedBtn.innerText = "❌ Failed";
-                            seedBtn.disabled = false;
-                            return;
-                        }
-                    } catch (e) {}
-                    await new Promise(resolve => setTimeout(resolve, 50)); 
+                        const payload = {
+                            version: "1.0",
+                            event_id: "evt_" + Date.now() + "_" + journey + "_" + step,
+                            event_type: ev.type,
+                            event_time: new Date().toISOString(),
+                            source: "sandbox",
+                            user: { anonymous_id: fakeUserId },
+                            session: { session_id: sharedSessionId },
+                            page: { url: "https://demo-store.com/" },
+                            // 🛠️ Spread the custom properties so the tracker passes them correctly
+                            ...ev.props
+                        };
+
+                        try {
+                            const res = await fetch(INGEST_ENDPOINT, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+                                body: JSON.stringify(payload)
+                            });
+                            
+                            const data = await res.json();
+                            if (res.ok) {
+                                successCount++;
+                            } else {
+                                errorText.innerText = "API Rejected the key: " + (data.error || "Unknown error");
+                                seedBtn.innerText = "❌ Failed";
+                                seedBtn.disabled = false;
+                                return;
+                            }
+                        } catch (e) {}
+                        await new Promise(resolve => setTimeout(resolve, 50)); 
+                    }
                 }
 
                 seedBtn.innerText = `✅ Sent ${successCount} events! Waiting for Kinesis...`;
@@ -294,7 +294,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                 // 🛠️ CPO FIX: Auto-select "Top Pages" to show a real dashboard during polling
                 const trafficBtn = document.querySelector('[data-template="traffic"]');
                 if (trafficBtn) {
-                    trafficBtn.click(); // This highlights the button and runs the query
+                    trafficBtn.click(); 
                 }
 
                 let retries = 0;
@@ -307,7 +307,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                         seedBtn.innerText = "✨ Send Test Data";
                         seedBtn.disabled = false;
                     }
-                }, 10000); // Faster polling (10 seconds)
+                }, 10000); 
             });
 
             runBtn.addEventListener('click', async () => {
