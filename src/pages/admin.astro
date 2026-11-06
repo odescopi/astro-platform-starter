@@ -1,0 +1,144 @@
+---
+import Layout from '../layouts/Layout.astro';
+const API_URL = import.meta.env.PUBLIC_API_URL;
+const COGNITO_ID = import.meta.env.PUBLIC_COGNITO_CLIENT_ID;
+const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
+---
+
+<Layout title="GetInsightStream - Admin">
+    
+    <script is:inline define:vars={{ COGNITO_ID, COGNITO_DOMAIN }}>
+        (function() {
+            const REDIRECT_URI = "https://getinsightstream.com/admin";
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            let idToken = hashParams.get('id_token');
+            if (idToken) {
+                localStorage.setItem('cognito_id_token', idToken);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else {
+                idToken = localStorage.getItem('cognito_id_token');
+            }
+            if (!idToken) {
+                const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${COGNITO_ID}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+                window.location.href = loginUrl;
+            }
+        })();
+    </script>
+
+    <div class="max-w-6xl mx-auto py-12 px-6">
+        <div class="mb-8 flex justify-between items-end">
+            <div>
+                <h1 class="text-3xl font-extrabold mb-2 text-white">👑 Admin Command Center</h1>
+                <p class="text-gray-400">Global view of all users and revenue.</p>
+            </div>
+            <a href="/dashboard" class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm border border-gray-700">Back to My Dashboard</a>
+        </div>
+
+        <div id="loading" class="text-center py-20 text-gray-400">Loading system data...</div>
+        <div id="errorText" class="text-red-400 mb-4 hidden text-center bg-red-500/10 p-4 rounded border border-red-500/30"></div>
+
+        <div id="adminContent" class="hidden">
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                    <p class="text-sm font-bold text-gray-400 mb-1">Total MRR</p>
+                    <p id="totalMrr" class="text-3xl font-extrabold text-green-400">$0</p>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                    <p class="text-sm font-bold text-gray-400 mb-1">Total Users</p>
+                    <p id="totalUsers" class="text-3xl font-extrabold text-white">0</p>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                    <p class="text-sm font-bold text-gray-400 mb-1">Total API Keys</p>
+                    <p id="totalKeys" class="text-3xl font-extrabold text-white">0</p>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                    <p class="text-sm font-bold text-gray-400 mb-1">Total Events</p>
+                    <p id="totalEvents" class="text-3xl font-extrabold text-yellow-400">0</p>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
+                <div class="bg-gray-900 px-6 py-4 border-b border-gray-700">
+                    <h2 class="text-xl font-bold text-white">All Active Keys</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-300">
+                        <thead class="text-xs uppercase bg-gray-900/50 text-gray-400 border-b border-gray-700">
+                            <tr>
+                                <th class="px-6 py-3 font-semibold">Shop Domain</th>
+                                <th class="px-6 py-3 font-semibold">User Email</th>
+                                <th class="px-6 py-3 font-semibold">Plan</th>
+                                <th class="px-6 py-3 font-semibold text-right">Events</th>
+                            </tr>
+                        </thead>
+                        <tbody id="keysTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script is:inline define:vars={{ API_URL }}>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const idToken = localStorage.getItem('cognito_id_token');
+            if (!idToken) return;
+
+            try {
+                const res = await fetch(`${API_URL}/v1/auth/admin`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' }
+                });
+
+                if (res.status === 403) {
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('errorText').innerText = "Access Denied. You are not the admin.";
+                    document.getElementById('errorText').classList.remove('hidden');
+                    return;
+                }
+
+                const data = await res.json();
+                
+                if (!data.success) throw new Error(data.error);
+
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('adminContent').classList.remove('hidden');
+
+                let mrr = 0;
+                let totalEvents = 0;
+                const uniqueUsers = new Set();
+                const tableBody = document.getElementById('keysTableBody');
+
+                data.keys.forEach(key => {
+                    uniqueUsers.add(key.user_email);
+                    totalEvents += parseInt(key.event_count || 0);
+                    
+                    if (key.plan === 'pro') mrr += 49;
+
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-gray-700 hover:bg-gray-750";
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 font-bold text-white">${key.shop_domain}</td>
+                        <td class="px-6 py-4 text-gray-400">${key.user_email}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded text-xs font-bold uppercase ${key.plan === 'pro' ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-300'}">${key.plan}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right font-mono text-yellow-400">${parseInt(key.event_count || 0).toLocaleString()}</td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+
+                document.getElementById('totalMrr').innerText = `$${mrr.toLocaleString()}`;
+                document.getElementById('totalUsers').innerText = uniqueUsers.size.toLocaleString();
+                document.getElementById('totalKeys').innerText = data.keys.length.toLocaleString();
+                document.getElementById('totalEvents').innerText = totalEvents.toLocaleString();
+
+            } catch (err) {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('errorText').innerText = "Error: " + err.message;
+                document.getElementById('errorText').classList.remove('hidden');
+            }
+        });
+    </script>
+</Layout>
