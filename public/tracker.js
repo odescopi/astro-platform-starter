@@ -7,9 +7,10 @@
         return;
     }
 
+    // 2. Your Live API Endpoint
     const API_ENDPOINT = "https://m01abirupj.execute-api.us-east-1.amazonaws.com/v1/events";
 
-    // 2. Generate IDs
+    // 3. Generate Persistent User ID & Session ID
     let userId = localStorage.getItem('gis_user_id');
     if (!userId) {
         userId = 'user_' + Math.random().toString(36).substring(2, 15);
@@ -22,7 +23,7 @@
         sessionStorage.setItem('gis_session_id', sessionId);
     }
 
-    // 3. Universal Event Sender
+    // 4. Universal Event Sender
     function sendEvent(eventType, additionalData = {}) {
         const payload = {
             version: "1.0",
@@ -50,16 +51,13 @@
         }).catch(err => console.error("GetInsightStream Error:", err));
     }
 
-    // 4. Automatically track Page Views
+    // 5. Auto-track Page Views
     sendEvent('page_view');
 
-    // 🛠️ 5. ENTERPRISE FIX: Auto-Detect Product Views (Shopify/WooCommerce)
-    // We look for standard OpenGraph meta tags that e-commerce sites use.
+    // 6. Auto-Detect Product Views (Shopify/WooCommerce)
     const ogType = document.querySelector('meta[property="og:type"]');
     if (ogType && ogType.content === 'product') {
         const productTitle = document.querySelector('meta[property="og:title"]')?.content || document.title;
-        
-        // Try to find the price (Shopify uses meta tags for price too)
         const priceMeta = document.querySelector('meta[property="og:price:amount"]') || 
                           document.querySelector('meta[property="product:price:amount"]');
         const price = priceMeta ? parseFloat(priceMeta.content) : 0;
@@ -70,20 +68,44 @@
         });
     }
 
-    // 6. Auto-track Add to Cart (Universal Listener)
+    // 7. SMART CLICK TRACKER (Buttons + Links)
     document.addEventListener('click', function(e) {
         const target = e.target.closest('button, a');
         if (!target) return;
+
+        const text = (target.innerText || "").trim();
+        if (text.length === 0 || text.length > 50) return;
+
+        const lowerText = text.toLowerCase();
         
-        const text = (target.innerText || "").toLowerCase();
-        if (text.includes('add to cart') || text.includes('buy now')) {
-            sendEvent('add_to_cart', {
-                page_url: window.location.href
-            });
+        // Route standard e-commerce clicks
+        if (lowerText.includes('add to cart') || lowerText.includes('buy now')) {
+            sendEvent('add_to_cart');
+            return;
         }
+
+        // Filter out standard navigation links to prevent database noise
+        const href = target.getAttribute('href');
+        if (target.tagName.toLowerCase() === 'a' && href) {
+            // Ignore internal links (Home, About, Pricing)
+            if (href.startsWith('/') && !href.includes('#') && !href.includes('checkout') && !href.includes('cart')) {
+                return; 
+            }
+            // Ignore social media links
+            if (href.includes('facebook.com') || href.includes('twitter.com') || href.includes('instagram.com')) {
+                return;
+            }
+        }
+
+        // Capture ALL other buttons and important CTA links
+        sendEvent('button_click', {
+            button_text: text,
+            button_url: href || "",
+            element_type: target.tagName.toLowerCase()
+        });
     });
 
-    // 7. Auto-Detect Purchase & Extract Revenue (Shopify/WooCommerce Checkout)
+    // 8. Auto-Detect Purchase (Shopify/WooCommerce Checkout)
     const currentUrl = window.location.href;
     if (currentUrl.includes('/thank_you') || currentUrl.includes('/order-received') || currentUrl.includes('/checkout/success')) {
         let revenue = 0;
@@ -101,7 +123,7 @@
         });
     }
 
-    // 8. Expose Global API for Custom Apps (React, Vue, Node)
+    // 9. Expose Global API for Custom Apps (React, Vue, Node)
     window.getinsightstream = function(action, eventType, data = {}) {
         if (action === 'track') {
             sendEvent(eventType, data);
