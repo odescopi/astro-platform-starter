@@ -7,7 +7,8 @@
         return;
     }
 
-    const API_ENDPOINT = "https://9q2w68wtrl.execute-api.us-east-1.amazonaws.com/v1/events";
+    // 🛠️ THE FIX: Updated to your current live API Gateway URL
+    const API_ENDPOINT = "https://m01abirupj.execute-api.us-east-1.amazonaws.com/v1/events";
 
     // 2. Generate a unique anonymous user ID (stored in browser)
     let userId = localStorage.getItem('gis_user_id');
@@ -23,7 +24,7 @@
         sessionStorage.setItem('gis_session_id', sessionId);
     }
 
-    // 4. Function to send the event to AWS
+    // 4. Universal Function to send the event to AWS
     function sendEvent(eventType, additionalData = {}) {
         const payload = {
             version: "1.0",
@@ -54,8 +55,8 @@
     // 5. Automatically track Page Views
     sendEvent('page_view');
 
-    // 6. Listen for Shopify "Add to Cart" buttons (Optional)
-    // We look for elements with a specific class or button name
+    // 6. Universal "Add to Cart" Listener
+    // This works for Shopify, WooCommerce, Wix, and custom apps.
     document.addEventListener('click', function(e) {
         const target = e.target.closest('button, a');
         if (!target) return;
