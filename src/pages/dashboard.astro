@@ -343,7 +343,7 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                                 currentPlan = 'pro';
                             }
 
-                            // 🛠️ Desktop Row (With URL-Encoded Explore Link)
+                            // 🛠️ Desktop Row (With URL-Encoded Explore & Install Links)
                             const tr = document.createElement('tr');
                             tr.className = "border-b border-gray-700 hover:bg-gray-750";
                             tr.innerHTML = `
@@ -360,13 +360,14 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end gap-2">
                                         <a href="/explorer?key=${encodeURIComponent(key.api_key)}&shop=${encodeURIComponent(key.shop_domain)}" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-2 rounded transition-colors flex-shrink-0">📊 Explore</a>
+                                        <a href="/install?key=${encodeURIComponent(key.api_key)}" class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-1 px-2 rounded transition-colors flex-shrink-0">⚙️ Install</a>
                                         <button onclick="openRevokeModal('${key.api_key}')" class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-1 px-2 rounded transition-colors flex-shrink-0">Revoke</button>
                                     </div>
                                 </td>
                             `;
                             keysTableBody.appendChild(tr);
 
-                            // 🛠️ Mobile Card (With URL-Encoded Explore Link)
+                            // 🛠️ Mobile Card (With URL-Encoded Explore & Install Links)
                             const card = document.createElement('div');
                             card.className = "bg-gray-800 rounded-xl border border-gray-700 p-5 shadow-lg";
                             card.innerHTML = `
@@ -378,8 +379,9 @@ const COGNITO_DOMAIN = import.meta.env.PUBLIC_COGNITO_DOMAIN;
                                     <p class="text-xs text-gray-500 mb-1">API Key</p>
                                     <p id="m-key-${index}" class="font-mono text-green-400 text-sm break-all">${key.api_key}</p>
                                 </div>
-                                <div class="flex gap-2">
+                                <div class="flex flex-wrap gap-2">
                                     <a href="/explorer?key=${encodeURIComponent(key.api_key)}&shop=${encodeURIComponent(key.shop_domain)}" class="flex-1 bg-red-500 hover:bg-red-600 text-center text-white text-xs font-bold py-2 rounded transition-colors">📊 Explore</a>
+                                    <a href="/install?key=${encodeURIComponent(key.api_key)}" class="flex-1 bg-gray-700 hover:bg-gray-600 text-center text-white text-xs font-bold py-2 rounded transition-colors">⚙️ Install</a>
                                     <button onclick="copyToClipboard('m-key-${index}', this)" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 rounded transition-colors">Copy</button>
                                     <button onclick="openRevokeModal('${key.api_key}')" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-2 rounded transition-colors">Revoke</button>
                                 </div>
